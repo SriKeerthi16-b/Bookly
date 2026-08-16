@@ -1,0 +1,371 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookly - Faculty & Research Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body class="dash-body faculty-theme-body">
+    <!-- Top Navigation -->
+    <header class="dash-navbar faculty-nav">
+        <div class="nav-brand">
+            <span class="brand-logo-icon">📖</span>
+            <div>
+                <span class="brand-name">Bookly</span>
+                <span class="role-pill faculty-pill">👩‍🏫 Faculty & Research</span>
+            </div>
+        </div>
+        <div class="nav-actions">
+            <span class="user-greeting">Prof. <strong>{{ request.user.username }}</strong> ({{ profile.department|default:"Faculty" }})</span>
+            <a href="{% url 'home' %}" class="nav-link">🌐 Public Catalog</a>
+            <a href="{% url 'logout' %}" class="btn-logout">Logout ↪</a>
+        </div>
+    </header>
+
+    <div class="dash-container">
+        <!-- Toast Alerts -->
+        {% if messages %}
+            <div class="dash-messages">
+                {% for message in messages %}
+                    <div class="toast-alert toast-{{ message.tags }}">
+                        <span>🔔</span>
+                        <div>{{ message }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Welcome Banner with Profile & Gate Pass -->
+        <section class="faculty-hero">
+            <div class="faculty-profile-info">
+                <span class="eyebrow">FACULTY & SCHOLARS HUB</span>
+                <h1>Academic Portal for Prof. {{ request.user.username }}</h1>
+                <p class="subtitle">{{ profile.department|default:"Academic Department" }} · ID: <strong>{{ profile.member_id|default:"FAC-2026" }}</strong></p>
+                <div class="faculty-privileges">
+                    <span class="privilege-tag">⭐ 30-Day Extended Loan Period</span>
+                    <span class="privilege-tag">⭐ 6 Simultaneous Book Quota ({{ active_borrow_count }}/{{ max_limit }} used)</span>
+                    <span class="privilege-tag">⭐ Priority Journal Reserves</span>
+                </div>
+            </div>
+
+            <!-- Gate Pass Card -->
+            <div class="gate-pass-card faculty-gate">
+                <div class="gate-pass-header">
+                    <span class="gate-icon">🚪</span>
+                    <div>
+                        <strong>Faculty Gate Attendance</strong>
+                        <p class="muted small">Faculty study lounge & archive entry</p>
+                    </div>
+                </div>
+                <div class="gate-pass-body">
+                    {% if current_visit %}
+                        <div class="visit-status visit-active">
+                            <span class="dot-live"></span>
+                            <div>
+                                <strong>Checked In</strong>
+                                <small>Entered at {{ current_visit.entry_time|date:"h:i A" }}</small>
+                            </div>
+                        </div>
+                        <form method="post" action="{% url 'toggle_visit' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger btn-block">Check Out Now ↪</button>
+                        </form>
+                    {% else %}
+                        <div class="visit-status visit-inactive">
+                            <span>⚪ Currently Outside</span>
+                            <small>Log attendance for library visit</small>
+                        </div>
+                        <form method="post" action="{% url 'toggle_visit' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-primary faculty-btn btn-block">Check In Today ↩</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <!-- Summary Stats -->
+        <div class="hero-stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📖</div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ active_borrow_count }} / {{ max_limit }}</span>
+                    <span class="stat-label">Faculty Active Loans</span>
+                    <span class="stat-sub">30-day loan duration</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📚</div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ books|length }}</span>
+                    <span class="stat-label">Titles in Repository</span>
+                    <span class="stat-sub">Textbooks & References</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📖</div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ journals|length }}</span>
+                    <span class="stat-label">Journals & Papers</span>
+                    <span class="stat-sub">Peer-reviewed volumes</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💻</div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ computer_working }}</span>
+                    <span class="stat-label">Vacant Lab PCs</span>
+                    <span class="stat-sub">Available for research</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Campus Announcements -->
+        {% if announcements %}
+            <section class="announcements-banner">
+                <div class="bulletin-header">
+                    <span>📢 <strong>Library Bulletin & Academic Notices</strong></span>
+                </div>
+                <div class="bulletin-items">
+                    {% for ann in announcements %}
+                        <div class="bulletin-item">
+                            <span class="announcement-tag tag-{{ ann.category }}">{{ ann.get_category_display }}</span>
+                            <strong>{{ ann.title }}</strong>: {{ ann.content }}
+                            <small class="muted">({{ ann.created_at|date:"d M" }})</small>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+
+        <!-- My Books Section: Loans & Queues -->
+        <section class="dash-section">
+            <div class="grid-2-cols">
+                <!-- Active Loans -->
+                <div class="panel-card">
+                    <div class="section-top-bar">
+                        <div>
+                            <h3>📖 Active Faculty Loans ({{ user_borrowed|length }})</h3>
+                            <p class="muted">Extended 30-day loans for syllabus and research.</p>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table compact-table">
+                            <thead>
+                                <tr>
+                                    <th>Book Title</th>
+                                    <th>Issue Date</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in user_borrowed %}
+                                    <tr class="{% if item.is_overdue %}row-overdue{% endif %}">
+                                        <td>
+                                            <strong>{{ item.book.title }}</strong>
+                                            <small class="block-muted">{{ item.book.author }}</small>
+                                        </td>
+                                        <td>{{ item.issue_date|date:"d M" }}</td>
+                                        <td><strong>{{ item.due_date|date:"d M Y" }}</strong></td>
+                                        <td>
+                                            {% if item.is_overdue %}
+                                                <span class="status-badge status-bad">⚠️ Overdue</span>
+                                            {% else %}
+                                                <span class="status-badge status-good">Due in {{ item.days_remaining }} days</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <form method="post" action="{% url 'return_book' item.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-xs btn-outline">Return</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 muted">No active book loans. Explore the collection below to borrow titles.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Waitlist Queues -->
+                <div class="panel-card">
+                    <div class="section-top-bar">
+                        <div>
+                            <h3>⌛ Waitlist Reservations ({{ user_reservations|length }})</h3>
+                            <p class="muted">Reserved titles on loan to other members.</p>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table compact-table">
+                            <thead>
+                                <tr>
+                                    <th>Book Title</th>
+                                    <th>Reserved Date</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for q_item in user_reservations %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ q_item.book.title }}</strong>
+                                            <small class="block-muted">{{ q_item.book.author }}</small>
+                                        </td>
+                                        <td>{{ q_item.reserved_at|date:"d M, H:i" }}</td>
+                                        <td>
+                                            {% if q_item.status == "notified" %}
+                                                <span class="status-badge status-good">🟢 Available at Desk!</span>
+                                            {% else %}
+                                                <span class="status-badge status-blue">Position #{{ q_item.get_queue_position }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <form method="post" action="{% url 'cancel_reservation' q_item.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-xs btn-danger">Cancel</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 muted">You have no pending reservations.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Complete Library Catalog Browser -->
+        <section class="dash-section" id="catalog-section">
+            <div class="section-top-bar">
+                <div>
+                    <h2>📚 Faculty Academic Catalog</h2>
+                    <p class="muted">Search across curriculum textbooks, reference guides, research volumes, and journals.</p>
+                </div>
+            </div>
+
+            <!-- Search & Filter Controls -->
+            <div class="search-filter-card">
+                <form method="get" action="{% url 'faculty_dashboard' %}#catalog-section" class="search-form">
+                    <div class="search-input-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" name="q" value="{{ search_query }}" placeholder="Search by title, author, category, or ISBN..." class="search-input">
+                        {% if selected_category %}
+                            <input type="hidden" name="category" value="{{ selected_category }}">
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary faculty-btn">Search Catalog</button>
+                    </div>
+                </form>
+
+                <div class="category-filters">
+                    <a href="{% url 'faculty_dashboard' %}#catalog-section" class="category-chip {% if not selected_category %}active{% endif %}">All Categories</a>
+                    {% for cat in categories %}
+                        {% if cat %}
+                            <a href="?category={{ cat }}#catalog-section" class="category-chip {% if selected_category == cat %}active{% endif %}">{{ cat }}</a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Books Grid -->
+            <div class="books-grid">
+                {% for book in books %}
+                    <div class="book-card">
+                        <div class="book-card-header">
+                            <span class="book-category-tag">{{ book.category }}</span>
+                            {% if book.available %}
+                                <span class="status-badge status-good">🟢 Available</span>
+                            {% else %}
+                                <span class="status-badge status-bad">🔴 Borrowed</span>
+                            {% endif %}
+                        </div>
+                        <div class="book-card-body">
+                            <h3 class="book-title">{{ book.title }}</h3>
+                            <p class="book-author">by {{ book.author }}</p>
+                            <p class="book-isbn muted"><small>ISBN: {{ book.isbn }}</small></p>
+                            {% if book.description %}
+                                <p class="book-desc">{{ book.description|truncatewords:18 }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="book-card-actions">
+                            {% if book.available %}
+                                <form method="post" action="{% url 'borrow_book' book.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary faculty-btn btn-block">📖 Borrow Book (30 Days)</button>
+                                </form>
+                            {% else %}
+                                <form method="post" action="{% url 'reserve_book' book.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-secondary btn-block">⌛ Join Waitlist Queue</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="panel-card text-center py-5 muted col-span-full">
+                        <p>No books matched your search.</p>
+                        <a href="{% url 'faculty_dashboard' %}#catalog-section" class="btn btn-outline mt-2">Reset Filter</a>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Journals & Research Periodicals Archive -->
+        <section class="dash-section">
+            <div class="panel-card">
+                <div class="section-top-bar">
+                    <div>
+                        <h3>📖 Peer-Reviewed Academic Journals ({{ journals|length }})</h3>
+                        <p class="muted">Research publications, international journals, and conference proceedings available in the library.</p>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Journal Name</th>
+                                <th>Publisher</th>
+                                <th>Volume & Issue</th>
+                                <th>Category</th>
+                                <th>Date</th>
+                                <th>Availability</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for j in journals %}
+                                <tr>
+                                    <td><strong>{{ j.name }}</strong></td>
+                                    <td>{{ j.publisher|default:"University Publications" }}</td>
+                                    <td>Vol {{ j.volume|default:"1" }} · Issue {{ j.issue|default:"1" }}</td>
+                                    <td><span class="tag-pill">{{ j.category|default:"Research" }}</span></td>
+                                    <td>{{ j.publication_date|date:"d M Y"|default:"Current" }}</td>
+                                    <td><span class="status-badge status-good">🟢 Available in Library</span></td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="6" class="text-center py-3 muted">No journals currently listed.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

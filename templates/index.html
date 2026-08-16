@@ -1,0 +1,350 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookly - Campus Digital Library</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/original_dashboard.css' %}">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <span class="logo-icon">📖</span>
+                <div>
+                    <h1>Bookly</h1>
+                    <small>Digital Library</small>
+                </div>
+            </div>
+
+            <p class="menu-label">EXPLORE</p>
+            <a class="nav-item active" href="{% url 'home' %}">⌂ <span>Home & Catalog</span></a>
+            <a class="nav-item" href="#books-section">📚 <span>All Books ({{ books|length }})</span></a>
+            <a class="nav-item" href="#journals-section">📖 <span>Journals ({{ journals|length }})</span></a>
+            <a class="nav-item" href="#newspapers-section">📰 <span>Newspapers ({{ newspapers|length }})</span></a>
+            <a class="nav-item" href="#lab-section">💻 <span>Computer Lab</span></a>
+
+            <p class="menu-label">ROLE PORTALS</p>
+            <a class="nav-item student-nav-item" href="{% url 'student_login' %}">👨‍🎓 <span>Student Portal</span></a>
+            <a class="nav-item faculty-nav-item" href="{% url 'faculty_login' %}">👩‍🏫 <span>Faculty Portal</span></a>
+            <a class="nav-item librarian-nav-item" href="{% url 'librarian_login' %}">👩‍💼 <span>Librarian Admin</span></a>
+
+            <div class="sidebar-bottom">
+                {% if request.user.is_authenticated %}
+                    <div class="logged-user-box">
+                        <span>Logged in as:</span>
+                        <strong>{{ request.user.username }}</strong>
+                        <small>({{ request.user.profile.role|title }})</small>
+                    </div>
+                    {% if request.user.profile.role == 'librarian' %}
+                        <a href="{% url 'librarian_dashboard' %}" class="portal-jump-btn">Go to Staff Center →</a>
+                    {% elif request.user.profile.role == 'faculty' %}
+                        <a href="{% url 'faculty_dashboard' %}" class="portal-jump-btn">Go to Faculty Hub →</a>
+                    {% else %}
+                        <a href="{% url 'student_dashboard' %}" class="portal-jump-btn">Go to Student Hub →</a>
+                    {% endif %}
+                    <a href="{% url 'logout' %}" class="nav-item logout-link">↪ <span>Logout</span></a>
+                {% else %}
+                    <a href="{% url 'auth_gateway' %}" class="btn-signin-gateway">🔑 Sign In / Register</a>
+                {% endif %}
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Search & User Header -->
+            <header class="top-header">
+                <form method="get" action="{% url 'home' %}#books-section" class="top-search-form">
+                    <span class="search-symbol">🔍</span>
+                    <input type="text" name="q" value="{{ search_query }}" placeholder="Search library catalog by title, author, subject, or ISBN..." class="header-search-input">
+                    {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+                </form>
+
+                <div class="header-right">
+                    {% if request.user.is_authenticated %}
+                        <div class="user-profile-badge">
+                            <span class="user-avatar">{{ request.user.username|first|upper }}</span>
+                            <div>
+                                <strong>{{ request.user.username }}</strong>
+                                <small>{{ request.user.profile.role|title }}</small>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="header-auth-buttons">
+                            <a href="{% url 'student_login' %}" class="btn btn-sm btn-outline">Student Login</a>
+                            <a href="{% url 'faculty_login' %}" class="btn btn-sm btn-outline">Faculty</a>
+                            <a href="{% url 'librarian_login' %}" class="btn btn-sm btn-primary">Librarian</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </header>
+
+            <!-- Alerts -->
+            {% if messages %}
+                <div class="page-messages">
+                    {% for message in messages %}
+                        <div class="alert-banner alert-{{ message.tags }}">
+                            <span>🔔</span> {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="content-scrollable">
+                <!-- Welcome Banner -->
+                <div class="welcome-banner">
+                    <div class="welcome-text">
+                        <h2>Welcome to Bookly Digital Library 👋</h2>
+                        <p>Explore thousands of curriculum books, peer-reviewed journals, daily newspapers, and computer lab workstations.</p>
+                    </div>
+                    <div class="role-quick-links">
+                        <a href="{% url 'student_login' %}" class="role-badge-link student-badge-link">👨‍🎓 Student Portal</a>
+                        <a href="{% url 'faculty_login' %}" class="role-badge-link faculty-badge-link">👩‍🏫 Faculty Portal</a>
+                        <a href="{% url 'librarian_login' %}" class="role-badge-link librarian-badge-link">👩‍💼 Staff Center</a>
+                    </div>
+                </div>
+
+                <!-- Stats Overview Bar -->
+                <div class="stats-cards-row">
+                    <div class="stat-box">
+                        <span class="stat-icon">📚</span>
+                        <div>
+                            <strong>{{ books|length }}</strong>
+                            <p>Books in Collection</p>
+                            <small>Available to Borrow</small>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-icon">📖</span>
+                        <div>
+                            <strong>{{ journals|length }}</strong>
+                            <p>Academic Journals</p>
+                            <small>Research Volumes</small>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-icon">📰</span>
+                        <div>
+                            <strong>{{ newspapers|length }}</strong>
+                            <p>Daily Newspapers</p>
+                            <small>Reading Room</small>
+                        </div>
+                    </div>
+                    <div class="stat-box highlight-box">
+                        <span class="stat-icon">💻</span>
+                        <div>
+                            <strong>{{ computer_working }} / {{ computer_total }}</strong>
+                            <p>Lab PCs Vacant</p>
+                            <small>🟢 Live System Status</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Campus Announcements & Quick Search Panels -->
+                <div class="panels-two-cols">
+                    <section class="panel quick-search-panel">
+                        <div class="panel-header">
+                            <h3>🔍 Instant Catalog Search</h3>
+                            <p class="muted">Find textbooks, syllabus references, and authors</p>
+                        </div>
+                        <form method="get" action="{% url 'home' %}#books-section" class="instant-search-box">
+                            <input type="text" name="q" value="{{ search_query }}" placeholder="Search by title, author, category, or ISBN...">
+                            <button type="submit" class="btn btn-primary">Search</button>
+                        </form>
+                        <div class="popular-tags">
+                            <span>Popular Topics:</span>
+                            <a href="?q=Algorithms#books-section" class="pill-search">Algorithms</a>
+                            <a href="?q=Computer#books-section" class="pill-search">Computer Science</a>
+                            <a href="?q=Engineering#books-section" class="pill-search">Engineering</a>
+                            <a href="?q=Python#books-section" class="pill-search">Python</a>
+                        </div>
+                    </section>
+
+                    <section class="panel announcements-panel">
+                        <div class="panel-header">
+                            <h3>📢 Library Announcements</h3>
+                            <span class="badge-count">{{ announcements|length }} Active</span>
+                        </div>
+                        <div class="announcements-list">
+                            {% for ann in announcements %}
+                                <div class="announcement-card-mini">
+                                    <div class="ann-mini-top">
+                                        <span class="ann-tag tag-{{ ann.category }}">{{ ann.get_category_display }}</span>
+                                        <small class="muted">{{ ann.created_at|date:"d M" }}</small>
+                                    </div>
+                                    <strong>{{ ann.title }}</strong>
+                                    <p>{{ ann.content }}</p>
+                                </div>
+                            {% empty %}
+                                <p class="muted py-3">No announcements at this time.</p>
+                            {% endfor %}
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Digital Lab Workstation Status -->
+                <section class="panel lab-section" id="lab-section">
+                    <div class="panel-header">
+                        <div>
+                            <h3>💻 Computer Lab Live Availability</h3>
+                            <p class="muted">Live workstation statuses across Digital Library Lab</p>
+                        </div>
+                        <div class="lab-live-summary">
+                            <span class="status-badge status-good">🟢 {{ computer_working }} Vacant</span>
+                            <span class="status-badge status-blue">🔵 {{ computer_in_use }} In Use</span>
+                            <span class="status-badge status-bad">🟠 {{ computer_maintenance }} Maintenance</span>
+                        </div>
+                    </div>
+
+                    <div class="lab-cards-container">
+                        {% for pc in computers %}
+                            <div class="lab-card-compact lab-card-{{ pc.status }}">
+                                <span class="pc-icon">🖥️</span>
+                                <strong>{{ pc.system_number }}</strong>
+                                <small class="muted">{{ pc.location }}</small>
+                                {% if pc.status == 'working' %}
+                                    <span class="status-badge status-good">🟢 Available</span>
+                                {% elif pc.status == 'in_use' %}
+                                    <span class="status-badge status-blue">🔵 In Use</span>
+                                {% else %}
+                                    <span class="status-badge status-bad">🟠 Maintenance</span>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <p class="muted">No workstations configured.</p>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <!-- Books Collection Section -->
+                <section class="panel books-catalog-panel" id="books-section">
+                    <div class="panel-header">
+                        <div>
+                            <h3>📚 Library Books Collection</h3>
+                            <p class="muted">Browse available titles or join waitlists</p>
+                        </div>
+                    </div>
+
+                    <!-- Category Pills -->
+                    <div class="category-filters-bar">
+                        <a href="{% url 'home' %}#books-section" class="cat-pill {% if not selected_category %}active{% endif %}">All Categories</a>
+                        {% for cat in categories %}
+                            {% if cat %}
+                                <a href="?category={{ cat }}#books-section" class="cat-pill {% if selected_category == cat %}active{% endif %}">{{ cat }}</a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <div class="public-books-grid">
+                        {% for book in books %}
+                            <article class="public-book-card">
+                                <div class="book-cover-placeholder">
+                                    <span>📖</span>
+                                    <span class="cover-cat">{{ book.category }}</span>
+                                </div>
+                                <div class="book-card-info">
+                                    <span class="book-cat-tag">{{ book.category }}</span>
+                                    <h4>{{ book.title }}</h4>
+                                    <p class="author-name">by {{ book.author }}</p>
+                                    <p class="isbn-label">ISBN: {{ book.isbn }}</p>
+                                    <div class="book-status-row">
+                                        {% if book.available %}
+                                            <span class="status-badge status-good">🟢 Available</span>
+                                            {% if request.user.is_authenticated %}
+                                                <form method="post" action="{% url 'borrow_book' book.id %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-xs btn-primary">Borrow</button>
+                                                </form>
+                                            {% else %}
+                                                <a href="{% url 'student_login' %}" class="btn btn-xs btn-outline">Sign In to Borrow</a>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="status-badge status-bad">🔴 Borrowed</span>
+                                            {% if request.user.is_authenticated %}
+                                                <form method="post" action="{% url 'reserve_book' book.id %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-xs btn-secondary">Join Queue</button>
+                                                </form>
+                                            {% else %}
+                                                <a href="{% url 'student_login' %}" class="btn btn-xs btn-outline">Sign In to Reserve</a>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </article>
+                        {% empty %}
+                            <div class="empty-state-box col-span-full">
+                                <p>No books found matching your query.</p>
+                                <a href="{% url 'home' %}#books-section" class="btn btn-sm btn-outline">View All Books</a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <!-- Journals & Newspapers Section -->
+                <div class="panels-two-cols" id="journals-section">
+                    <!-- Journals -->
+                    <section class="panel">
+                        <div class="panel-header">
+                            <h3>📖 Academic Journals ({{ journals|length }})</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table compact-table">
+                                <thead>
+                                    <tr><th>Journal</th><th>Publisher</th><th>Vol / Issue</th></tr>
+                                </thead>
+                                <tbody>
+                                    {% for j in journals|slice:":6" %}
+                                        <tr>
+                                            <td><strong>{{ j.name }}</strong></td>
+                                            <td>{{ j.publisher|default:"University Press" }}</td>
+                                            <td>Vol {{ j.volume|default:"1" }} · Issue {{ j.issue|default:"1" }}</td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr><td colspan="3" class="muted">No journals currently listed.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <!-- Newspapers -->
+                    <section class="panel" id="newspapers-section">
+                        <div class="panel-header">
+                            <h3>📰 Newspapers & Dailies ({{ newspapers|length }})</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table compact-table">
+                                <thead>
+                                    <tr><th>Newspaper</th><th>Language</th><th>Available Copies</th></tr>
+                                </thead>
+                                <tbody>
+                                    {% for n in newspapers|slice:":6" %}
+                                        <tr>
+                                            <td><strong>{{ n.name }}</strong></td>
+                                            <td>{{ n.language|default:"English" }}</td>
+                                            <td><span class="tag-pill">{{ n.copies }} copies</span></td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr><td colspan="3" class="muted">No newspapers currently listed.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Footer -->
+                <footer class="app-footer">
+                    <p>© 2026 Bookly Digital Library Management System · College Campus Central Library</p>
+                </footer>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

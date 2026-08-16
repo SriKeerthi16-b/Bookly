@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Registration - Bookly</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body class="auth-page faculty-theme">
+    <div class="auth-card">
+        <section class="auth-side faculty-side">
+            <div class="brand">
+                <span class="brand-icon">📖</span>
+                <div>
+                    <span class="brand-title">Bookly</span>
+                    <span class="brand-role faculty-badge">👩‍🏫 Faculty Portal</span>
+                </div>
+            </div>
+            <div class="auth-side-content">
+                <h2>Register Faculty Profile</h2>
+                <p>Set up your faculty account for seamless access to curriculum books, journals, and priority library services.</p>
+                <div class="perks-list">
+                    <div>✓ 30-day loans for syllabus preparation</div>
+                    <div>✓ 6-book checkout quota</div>
+                    <div>✓ Access to academic newspapers & research archives</div>
+                </div>
+            </div>
+            <a href="{% url 'auth_gateway' %}" class="side-portal-switch">← Switch to another portal</a>
+        </section>
+
+        <section class="auth-form-side">
+            <div class="form-header">
+                <h2>Faculty Registration</h2>
+                <p class="muted">Enter your departmental and academic credentials.</p>
+            </div>
+
+            {% if messages %}
+                <div class="messages-container">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post" class="styled-form">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="username">Username *</label>
+                        <input id="username" name="username" required placeholder="e.g. dr_ramesh">
+                    </div>
+                    <div class="form-group">
+                        <label for="member_id">Faculty / Employee ID</label>
+                        <input id="member_id" name="member_id" placeholder="e.g. FAC-EE-104">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="department">Department</label>
+                        <input id="department" name="department" placeholder="e.g. Electrical Engineering">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone_number">Contact Number</label>
+                        <input id="phone_number" name="phone_number" placeholder="e.g. +91 94400 12345">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Create Password *</label>
+                    <input id="password" type="password" name="password" required placeholder="••••••••">
+                </div>
+
+                <button type="submit" class="btn btn-primary faculty-btn btn-block">Register Faculty Account</button>
+            </form>
+
+            <div class="form-footer">
+                <p>Already have an account? <a href="{% url 'faculty_login' %}">Sign In as Faculty</a></p>
+                <p class="public-link"><a href="{% url 'home' %}">← Back to Public Library Home</a></p>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

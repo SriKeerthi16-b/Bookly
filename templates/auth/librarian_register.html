@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Librarian Registration - Bookly</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body class="auth-page librarian-theme">
+    <div class="auth-card">
+        <section class="auth-side librarian-side">
+            <div class="brand">
+                <span class="brand-icon">📖</span>
+                <div>
+                    <span class="brand-title">Bookly</span>
+                    <span class="brand-role librarian-badge">👩‍💼 Librarian Portal</span>
+                </div>
+            </div>
+            <div class="auth-side-content">
+                <h2>Librarian Staff Onboarding</h2>
+                <p>Register as a library administrator with master privileges to curate catalogs, manage returns, and publish announcements.</p>
+                <div class="perks-list">
+                    <div>✓ Security passcode protected registration</div>
+                    <div>✓ Full CRUD on Books, Journals, News, Computers</div>
+                    <div>✓ Direct circulation desk and gate attendance control</div>
+                </div>
+            </div>
+            <a href="{% url 'auth_gateway' %}" class="side-portal-switch">← Switch to another portal</a>
+        </section>
+
+        <section class="auth-form-side">
+            <div class="form-header">
+                <h2>Staff Registration</h2>
+                <p class="muted">Enter staff credentials along with your admin passcode.</p>
+            </div>
+
+            {% if messages %}
+                <div class="messages-container">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post" class="styled-form">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="username">Staff Username *</label>
+                        <input id="username" name="username" required placeholder="e.g. librarian_mary">
+                    </div>
+                    <div class="form-group">
+                        <label for="member_id">Staff / Employee ID</label>
+                        <input id="member_id" name="member_id" placeholder="e.g. LIB-2026">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="staff_code">Librarian Security Passcode *</label>
+                    <input id="staff_code" name="staff_code" required placeholder="Enter library authorization passcode" value="BOOKLY-ADMIN-2026">
+                    <small class="field-hint">Default staff passcode: <code>BOOKLY-ADMIN-2026</code></small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="phone_number">Contact Phone</label>
+                        <input id="phone_number" name="phone_number" placeholder="e.g. +91 98000 11122">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Create Password *</label>
+                        <input id="password" type="password" name="password" required placeholder="••••••••">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary librarian-btn btn-block">Register Librarian Account</button>
+            </form>
+
+            <div class="form-footer">
+                <p>Already have an account? <a href="{% url 'librarian_login' %}">Sign In as Librarian</a></p>
+                <p class="public-link"><a href="{% url 'home' %}">← Back to Public Library Home</a></p>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

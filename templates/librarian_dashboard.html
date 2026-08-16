@@ -1,0 +1,936 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookly - Librarian Control Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body class="dash-body librarian-theme-body">
+    <!-- Top App Navigation -->
+    <header class="dash-navbar">
+        <div class="nav-brand">
+            <span class="brand-logo-icon">📖</span>
+            <div>
+                <span class="brand-name">Bookly</span>
+                <span class="role-pill librarian-pill">👩‍💼 Librarian Admin</span>
+            </div>
+        </div>
+        <div class="nav-actions">
+            <span class="user-greeting">Staff: <strong>{{ request.user.username }}</strong></span>
+            <a href="{% url 'home' %}" class="nav-link" target="_blank">🌐 View Public Portal</a>
+            <a href="{% url 'logout' %}" class="btn-logout">Logout ↪</a>
+        </div>
+    </header>
+
+    <div class="dash-container">
+        <!-- Toast Notification Messages -->
+        {% if messages %}
+            <div class="dash-messages">
+                {% for message in messages %}
+                    <div class="toast-alert toast-{{ message.tags }}">
+                        <span>🔔</span>
+                        <div>{{ message }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Dashboard Hero & Quick Stats -->
+        <section class="dash-hero">
+            <div class="hero-text">
+                <span class="eyebrow">MASTER CONTROL CENTER</span>
+                <h1>Library Operations & Resource Management</h1>
+                <p class="subtitle">Complete administrative control over library catalog items, circulation loans, waitlist reservations, computer stations, and campus announcements.</p>
+            </div>
+            <div class="hero-stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📚</div>
+                    <div class="stat-info">
+                        <span class="stat-value">{{ books|length }}</span>
+                        <span class="stat-label">Total Books</span>
+                        <span class="stat-sub">🟢 {{ available_books }} Available · 🔴 {{ borrowed_books }} Borrowed</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📖</div>
+                    <div class="stat-info">
+                        <span class="stat-value">{{ journal_count }}</span>
+                        <span class="stat-label">Journals</span>
+                        <span class="stat-sub">Academic & Research</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📰</div>
+                    <div class="stat-info">
+                        <span class="stat-value">{{ newspaper_count }}</span>
+                        <span class="stat-label">Newspapers</span>
+                        <span class="stat-sub">Daily Subscriptions</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💻</div>
+                    <div class="stat-info">
+                        <span class="stat-value">{{ computer_total }}</span>
+                        <span class="stat-label">Lab Systems</span>
+                        <span class="stat-sub">🟢 {{ computer_working }} Vacant · 🔵 {{ computer_in_use }} In Use</span>
+                    </div>
+                </div>
+                <div class="stat-card highlight">
+                    <div class="stat-icon">🚪</div>
+                    <div class="stat-info">
+                        <span class="stat-value">{{ currently_inside }}</span>
+                        <span class="stat-label">Readers Inside</span>
+                        <span class="stat-sub">Total today: {{ total_visits_today }}</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation Tabs -->
+        <nav class="sub-nav-tabs">
+            <a href="#books-sec" class="tab-btn active">📚 Books Inventory</a>
+            <a href="#circulation-sec" class="tab-btn">🔄 Circulation Desk ({{ active_issues|length }})</a>
+            <a href="#computer-sec" class="tab-btn">💻 Computer Lab ({{ computer_total }})</a>
+            <a href="#announcements-sec" class="tab-btn">📢 Announcements Studio</a>
+            <a href="#journals-sec" class="tab-btn">📖 Journals & Newspapers</a>
+            <a href="#attendance-sec" class="tab-btn">🚪 Gate Attendance</a>
+        </nav>
+
+        <!-- ============================================================== -->
+        <!-- 1. BOOKS INVENTORY SECTION (CRUD) -->
+        <!-- ============================================================== -->
+        <section id="books-sec" class="dash-section">
+            <div class="section-top-bar">
+                <div>
+                    <h2>📚 Book Collection Management</h2>
+                    <p class="muted">Add new book accessions, update details, or delete discontinued titles.</p>
+                </div>
+                <button class="btn btn-primary" onclick="toggleModal('addBookModal')">➕ Add New Book</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Book Details</th>
+                            <th>ISBN</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Current Borrower</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for book in books %}
+                            <tr>
+                                <td>
+                                    <div class="resource-title-cell">
+                                        <strong>{{ book.title }}</strong>
+                                        <small class="muted">by {{ book.author }}</small>
+                                    </div>
+                                </td>
+                                <td><code>{{ book.isbn }}</code></td>
+                                <td><span class="tag-pill">{{ book.category }}</span></td>
+                                <td>
+                                    {% if book.available %}
+                                        <span class="status-badge status-good">🟢 Available</span>
+                                    {% else %}
+                                        <span class="status-badge status-bad">🔴 Borrowed</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if not book.available and book.active_borrow_record %}
+                                        <span class="user-chip">👤 {{ book.active_borrow_record.user.username }}</span>
+                                        <small class="block-muted">Due: {{ book.active_borrow_record.due_date|date:"d M Y" }}</small>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="action-btn-group">
+                                        <button class="btn btn-sm btn-outline" onclick="openEditBookModal('{{ book.id }}', '{{ book.title|escapejs }}', '{{ book.author|escapejs }}', '{{ book.category|escapejs }}', '{{ book.isbn|escapejs }}', '{{ book.description|escapejs }}', {{ book.available|yesno:'true,false' }})">✏️ Edit</button>
+                                        <form method="post" action="{% url 'delete_book' book.id %}" onsubmit="return confirm('Are you sure you want to remove &quot;{{ book.title|escapejs }}&quot; from the catalog?');" style="display:inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-danger">🗑️</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 muted">No books found in the collection. Add your first book above!</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- 2. CIRCULATION DESK (ACTIVE LOANS & RETURNS) -->
+        <!-- ============================================================== -->
+        <section id="circulation-sec" class="dash-section">
+            <div class="section-top-bar">
+                <div>
+                    <h2>🔄 Circulation Desk & Active Loans</h2>
+                    <p class="muted">Monitor issued books, overdue status, fine calculations, and process single-click returns.</p>
+                </div>
+            </div>
+
+            <div class="grid-2-cols">
+                <div class="panel-card">
+                    <h3>Active Borrowings ({{ active_issues|length }})</h3>
+                    <div class="table-responsive">
+                        <table class="data-table compact-table">
+                            <thead>
+                                <tr>
+                                    <th>Book</th>
+                                    <th>Borrower</th>
+                                    <th>Issue Date</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for issue in active_issues %}
+                                    <tr class="{% if issue.is_overdue %}row-overdue{% endif %}">
+                                        <td><strong>{{ issue.book.title }}</strong></td>
+                                        <td>
+                                            <span>{{ issue.user.username }}</span>
+                                            <small class="block-muted">({{ issue.user.profile.role|title }})</small>
+                                        </td>
+                                        <td>{{ issue.issue_date|date:"d M" }}</td>
+                                        <td><strong>{{ issue.due_date|date:"d M" }}</strong></td>
+                                        <td>
+                                            {% if issue.is_overdue %}
+                                                <span class="status-badge status-bad">⚠️ Overdue (Fine ₹{{ issue.fine_amount }})</span>
+                                            {% else %}
+                                                <span class="status-badge status-blue">Active ({{ issue.days_remaining }}d left)</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <form method="post" action="{% url 'return_book' issue.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-success">Mark Returned</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center py-3 muted">No books currently on loan.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <h3>Active Book Reservation Queues ({{ active_reservations|length }})</h3>
+                    <div class="table-responsive">
+                        <table class="data-table compact-table">
+                            <thead>
+                                <tr>
+                                    <th>Book</th>
+                                    <th>Reader</th>
+                                    <th>Reserved On</th>
+                                    <th>Queue Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for res in active_reservations %}
+                                    <tr>
+                                        <td><strong>{{ res.book.title }}</strong></td>
+                                        <td>{{ res.user.username }}</td>
+                                        <td>{{ res.reserved_at|date:"d M, H:i" }}</td>
+                                        <td>
+                                            {% if res.status == "notified" %}
+                                                <span class="status-badge status-good">🟢 Notified for Pickup</span>
+                                            {% else %}
+                                                <span class="status-badge status-blue">⌛ In Queue (#{{ res.get_queue_position }})</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <form method="post" action="{% url 'cancel_reservation' res.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline">Cancel</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-3 muted">No readers in waitlist queues.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- 3. COMPUTER LAB WORKSTATION MANAGER -->
+        <!-- ============================================================== -->
+        <section id="computer-sec" class="dash-section">
+            <div class="section-top-bar">
+                <div>
+                    <h2>💻 Digital Lab Workstation Grid</h2>
+                    <p class="muted">Live status of library computers. Click "Toggle Status" to cycle states: 🟢 Vacant → 🔵 In Use → 🟠 Maintenance.</p>
+                </div>
+                <button class="btn btn-primary" onclick="toggleModal('addComputerModal')">➕ Add Workstation</button>
+            </div>
+
+            <div class="lab-grid">
+                {% for pc in computers %}
+                    <div class="lab-card lab-card-{{ pc.status }}">
+                        <div class="lab-card-header">
+                            <span class="pc-icon">🖥️</span>
+                            <strong>{{ pc.system_number }}</strong>
+                        </div>
+                        <p class="pc-location">{{ pc.location }}</p>
+                        {% if pc.notes %}<p class="pc-notes muted"><small>{{ pc.notes }}</small></p>{% endif %}
+                        <div class="pc-status-pill">
+                            {% if pc.status == "working" %}
+                                <span class="status-badge status-good">🟢 Vacant / Working</span>
+                            {% elif pc.status == "in_use" %}
+                                <span class="status-badge status-blue">🔵 In Use</span>
+                            {% else %}
+                                <span class="status-badge status-bad">🟠 Maintenance</span>
+                            {% endif %}
+                        </div>
+                        <div class="lab-card-actions">
+                            <form method="post" action="{% url 'toggle_computer_status' pc.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-secondary btn-block">Switch Status 🔄</button>
+                            </form>
+                            <div class="sub-actions">
+                                <button class="btn btn-xs btn-outline" onclick="openEditComputerModal('{{ pc.id }}', '{{ pc.system_number|escapejs }}', '{{ pc.status }}', '{{ pc.location|escapejs }}', '{{ pc.notes|escapejs }}')">Edit</button>
+                                <form method="post" action="{% url 'delete_computer' pc.id %}" onsubmit="return confirm('Delete workstation {{ pc.system_number }}?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="muted">No computer workstations configured. Click "+ Add Workstation" above.</p>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- 4. ANNOUNCEMENTS STUDIO -->
+        <!-- ============================================================== -->
+        <section id="announcements-sec" class="dash-section">
+            <div class="section-top-bar">
+                <div>
+                    <h2>📢 Library Bulletin & Announcements Studio</h2>
+                    <p class="muted">Publish campus announcements visible across student, faculty, and public dashboards.</p>
+                </div>
+                <button class="btn btn-primary" onclick="toggleModal('addAnnouncementModal')">➕ Post Announcement</button>
+            </div>
+
+            <div class="announcements-grid">
+                {% for item in announcements %}
+                    <div class="announcement-item-card">
+                        <div class="announcement-item-header">
+                            <span class="announcement-tag tag-{{ item.category }}">{{ item.get_category_display }}</span>
+                            <span class="muted small">{{ item.created_at|date:"d M Y, H:i" }}</span>
+                        </div>
+                        <h3>{{ item.title }}</h3>
+                        <p>{{ item.content }}</p>
+                        <div class="announcement-item-footer">
+                            <small class="muted">Author: {{ item.author.username|default:"Library Admin" }}</small>
+                            <div class="action-btn-group">
+                                <button class="btn btn-xs btn-outline" onclick="openEditAnnouncementModal('{{ item.id }}', '{{ item.title|escapejs }}', '{{ item.content|escapejs }}', '{{ item.category }}', {{ item.is_active|yesno:'true,false' }})">✏️ Edit</button>
+                                <form method="post" action="{% url 'delete_announcement' item.id %}" onsubmit="return confirm('Delete announcement: &quot;{{ item.title|escapejs }}&quot;?');" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-xs btn-danger">🗑️</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="panel-card text-center py-4 muted">
+                        <p>No announcements currently published. Broadcast your first announcement to students and faculty!</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- 5. JOURNALS & NEWSPAPERS SECTION -->
+        <!-- ============================================================== -->
+        <section id="journals-sec" class="dash-section">
+            <div class="grid-2-cols">
+                <!-- Journals Panel -->
+                <div class="panel-card">
+                    <div class="section-top-bar">
+                        <div>
+                            <h3>📖 Academic Journals ({{ journal_count }})</h3>
+                            <p class="muted">Research periodicals and quarterly volumes.</p>
+                        </div>
+                        <button class="btn btn-sm btn-primary" onclick="toggleModal('addJournalModal')">➕ Add Journal</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table compact-table">
+                            <thead>
+                                <tr>
+                                    <th>Journal Name</th>
+                                    <th>Publisher</th>
+                                    <th>Vol / Issue</th>
+                                    <th>Category</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for j in journals %}
+                                    <tr>
+                                        <td><strong>{{ j.name }}</strong></td>
+                                        <td>{{ j.publisher|default:"—" }}</td>
+                                        <td>Vol {{ j.volume|default:"1" }} · Issue {{ j.issue|default:"1" }}</td>
+                                        <td><span class="tag-pill">{{ j.category|default:"General" }}</span></td>
+                                        <td>
+                                            <div class="action-btn-group">
+                                                <button class="btn btn-xs btn-outline" onclick="openEditJournalModal('{{ j.id }}', '{{ j.name|escapejs }}', '{{ j.publisher|escapejs }}', '{{ j.volume|escapejs }}', '{{ j.issue|escapejs }}', '{{ j.publication_date|date:'Y-m-d' }}', '{{ j.category|escapejs }}', {{ j.available|yesno:'true,false' }})">Edit</button>
+                                                <form method="post" action="{% url 'delete_journal' j.id %}" onsubmit="return confirm('Delete journal &quot;{{ j.name|escapejs }}&quot;?');">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-xs btn-danger">🗑️</button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr><td colspan="5" class="text-center py-3 muted">No journals recorded.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Newspapers Panel -->
+                <div class="panel-card">
+                    <div class="section-top-bar">
+                        <div>
+                            <h3>📰 Newspapers & Dailies ({{ newspaper_count }})</h3>
+                            <p class="muted">Daily print editions and subscriptions.</p>
+                        </div>
+                        <button class="btn btn-sm btn-primary" onclick="toggleModal('addNewspaperModal')">➕ Add Daily</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table compact-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Language</th>
+                                    <th>Date</th>
+                                    <th>Copies</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for n in newspapers %}
+                                    <tr>
+                                        <td><strong>{{ n.name }}</strong></td>
+                                        <td>{{ n.language|default:"English" }}</td>
+                                        <td>{{ n.publication_date|date:"d M Y"|default:"Today" }}</td>
+                                        <td><span class="tag-pill">{{ n.copies }} copies</span></td>
+                                        <td>
+                                            <div class="action-btn-group">
+                                                <button class="btn btn-xs btn-outline" onclick="openEditNewspaperModal('{{ n.id }}', '{{ n.name|escapejs }}', '{{ n.language|escapejs }}', '{{ n.publication_date|date:'Y-m-d' }}', '{{ n.copies }}', {{ n.available|yesno:'true,false' }})">Edit</button>
+                                                <form method="post" action="{% url 'delete_newspaper' n.id %}" onsubmit="return confirm('Delete newspaper &quot;{{ n.name|escapejs }}&quot;?');">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-xs btn-danger">🗑️</button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr><td colspan="5" class="text-center py-3 muted">No newspapers recorded.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- 6. GATE ATTENDANCE LOGS -->
+        <!-- ============================================================== -->
+        <section id="attendance-sec" class="dash-section">
+            <div class="section-top-bar">
+                <div>
+                    <h2>🚪 Today's Gate Attendance & Footfall</h2>
+                    <p class="muted">Live log of readers entering and leaving the campus library today.</p>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table compact-table">
+                    <thead>
+                        <tr>
+                            <th>Visitor</th>
+                            <th>Role</th>
+                            <th>Department</th>
+                            <th>Entry Time</th>
+                            <th>Exit Time</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for visit in today_visits %}
+                            <tr>
+                                <td><strong>{{ visit.user.username }}</strong></td>
+                                <td><span class="tag-pill">{{ visit.user.profile.role|title }}</span></td>
+                                <td>{{ visit.user.profile.department|default:"General" }}</td>
+                                <td>{{ visit.entry_time|date:"h:i A" }}</td>
+                                <td>{{ visit.exit_time|date:"h:i A"|default:"Active Inside" }}</td>
+                                <td>
+                                    {% if visit.status == "checked_in" %}
+                                        <span class="status-badge status-good">🟢 Inside Library</span>
+                                    {% else %}
+                                        <span class="status-badge status-blue">Checked Out</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-3 muted">No visitor entries logged yet today.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- MODALS: ADD & EDIT FOR ALL RESOURCES -->
+    <!-- ============================================================== -->
+
+    <!-- Add Book Modal -->
+    <div id="addBookModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>➕ Add New Book</h3>
+                <button class="modal-close" onclick="toggleModal('addBookModal')">✕</button>
+            </div>
+            <form method="post" action="{% url 'add_book' %}" class="styled-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input name="title" required placeholder="e.g. Introduction to Algorithms">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Author *</label>
+                        <input name="author" required placeholder="e.g. Thomas H. Cormen">
+                    </div>
+                    <div class="form-group">
+                        <label>Category *</label>
+                        <input name="category" required placeholder="e.g. Computer Science">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>ISBN *</label>
+                    <input name="isbn" required placeholder="e.g. 978-0262033848">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" rows="3" placeholder="Brief summary of the book..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="toggleModal('addBookModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Book</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Book Modal -->
+    <div id="editBookModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>✏️ Edit Book Details</h3>
+                <button class="modal-close" onclick="toggleModal('editBookModal')">✕</button>
+            </div>
+            <form id="editBookForm" method="post" class="styled-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input id="edit_book_title" name="title" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Author *</label>
+                        <input id="edit_book_author" name="author" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Category *</label>
+                        <input id="edit_book_category" name="category" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>ISBN *</label>
+                    <input id="edit_book_isbn" name="isbn" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="edit_book_description" name="description" rows="3"></textarea>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="edit_book_available" name="available"> Available for Borrowing
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="toggleModal('editBookModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Computer Modal -->
+    <div id="addComputerModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>➕ Add Lab Workstation</h3>
+                <button class="modal-close" onclick="toggleModal('addComputerModal')">✕</button>
+            </div>
+            <form method="post" action="{% url 'add_computer' %}" class="styled-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>System Identifier *</label>
+                    <input name="system_number" required placeholder="e.g. LAB-PC-01">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select name="status">
+                            <option value="working">🟢 Working / Vacant</option>
+                            <option value="in_use">🔵 In Use</option>
+                            <option value="maintenance">🟠 Maintenance</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input name="location" value="Digital Library Lab 1">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes / Hardware Specs</label>
+                    <input name="notes" placeholder="e.g. 16GB RAM, Dual Monitor">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="toggleModal('addComputerModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add System</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Computer Modal -->
+    <div id="editComputerModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>✏️ Edit Workstation</h3>
+                <button class="modal-close" onclick="toggleModal('editComputerModal')">✕</button>
+            </div>
+            <form id="editComputerForm" method="post" class="styled-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>System Number *</label>
+                    <input id="edit_pc_system_number" name="system_number" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="edit_pc_status" name="status">
+                            <option value="working">Working / Vacant</option>
+                            <option value="in_use">In Use</option>
+                            <option value="maintenance">Maintenance</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input id="edit_pc_location" name="location">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <input id="edit_pc_notes" name="notes">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="toggleModal('editComputerModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Announcement Modal -->
+    <div id="addAnnouncementModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>📢 Publish Library Announcement</h3>
+                <button class="modal-close" onclick="toggleModal('addAnnouncementModal')">✕</button>
+            </div>
+            <form method="post" action="{% url 'add_announcement' %}" class="styled-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input name="title" required placeholder="e.g. Extended Library Hours during Mid-Term Exams">
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select name="category">
+                        <option value="general">General Notice</option>
+                        <option value="exam">Exam Hours</option>
+                        <option value="new_arrivals">New Arrivals</option>
+                        <option value="maintenance">System Maintenance</option>
+                        <option value="event">Library Event</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Announcement Content *</label>
+                    <textarea name="content" rows="4" required placeholder="Type the announcement message details here..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="toggleModal('addAnnouncementModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Publish Announcement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Announcement Modal -->
+    <div id="editAnnouncementModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>✏️ Edit Announcement</h3>
+                <button class="modal-close" onclick="toggleModal('editAnnouncementModal')">✕</button>
+            </div>
+            <form id="editAnnouncementForm" method="post" class="styled-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input id="edit_ann_title" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="edit_ann_category" name="category">
+                        <option value="general">General Notice</option>
+                        <option value="exam">Exam Hours</option>
+                        <option value="new_arrivals">New Arrivals</option>
+                        <option value="maintenance">System Maintenance</option>
+                        <option value="event">Library Event</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Content *</label>
+                    <textarea id="edit_ann_content" name="content" rows="4" required></textarea>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="edit_ann_active" name="is_active"> Active / Visible on Bulletin
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="toggleModal('editAnnouncementModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Journal Modal -->
+    <div id="addJournalModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>➕ Add Academic Journal</h3>
+                <button class="modal-close" onclick="toggleModal('addJournalModal')">✕</button>
+            </div>
+            <form method="post" action="{% url 'add_journal' %}" class="styled-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Journal Name *</label>
+                    <input name="name" required placeholder="e.g. IEEE Transactions on Software Engineering">
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Publisher</label><input name="publisher" placeholder="e.g. IEEE Computer Society"></div>
+                    <div class="form-group"><label>Category</label><input name="category" placeholder="e.g. Computer Science"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Volume</label><input name="volume" placeholder="e.g. 48"></div>
+                    <div class="form-group"><label>Issue</label><input name="issue" placeholder="e.g. 4"></div>
+                    <div class="form-group"><label>Publication Date</label><input type="date" name="publication_date"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="toggleModal('addJournalModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Journal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Journal Modal -->
+    <div id="editJournalModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>✏️ Edit Journal</h3>
+                <button class="modal-close" onclick="toggleModal('editJournalModal')">✕</button>
+            </div>
+            <form id="editJournalForm" method="post" class="styled-form">
+                {% csrf_token %}
+                <div class="form-group"><label>Journal Name *</label><input id="edit_j_name" name="name" required></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Publisher</label><input id="edit_j_publisher" name="publisher"></div>
+                    <div class="form-group"><label>Category</label><input id="edit_j_category" name="category"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Volume</label><input id="edit_j_volume" name="volume"></div>
+                    <div class="form-group"><label>Issue</label><input id="edit_j_issue" name="issue"></div>
+                    <div class="form-group"><label>Date</label><input type="date" id="edit_j_date" name="publication_date"></div>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label><input type="checkbox" id="edit_j_available" name="available"> Available</label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="toggleModal('editJournalModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Newspaper Modal -->
+    <div id="addNewspaperModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>➕ Add Newspaper / Daily</h3>
+                <button class="modal-close" onclick="toggleModal('addNewspaperModal')">✕</button>
+            </div>
+            <form method="post" action="{% url 'add_newspaper' %}" class="styled-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Newspaper Title *</label>
+                    <input name="name" required placeholder="e.g. The Hindu, Times of India">
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Language</label><input name="language" placeholder="e.g. English, Hindi"></div>
+                    <div class="form-group"><label>Daily Copies</label><input type="number" name="copies" min="1" value="2"></div>
+                </div>
+                <div class="form-group"><label>Date</label><input type="date" name="publication_date"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="toggleModal('addNewspaperModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Newspaper</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Newspaper Modal -->
+    <div id="editNewspaperModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>✏️ Edit Newspaper</h3>
+                <button class="modal-close" onclick="toggleModal('editNewspaperModal')">✕</button>
+            </div>
+            <form id="editNewspaperForm" method="post" class="styled-form">
+                {% csrf_token %}
+                <div class="form-group"><label>Newspaper Title *</label><input id="edit_n_name" name="name" required></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Language</label><input id="edit_n_language" name="language"></div>
+                    <div class="form-group"><label>Copies</label><input type="number" id="edit_n_copies" name="copies" min="1"></div>
+                </div>
+                <div class="form-group"><label>Date</label><input type="date" id="edit_n_date" name="publication_date"></div>
+                <div class="form-group checkbox-group">
+                    <label><input type="checkbox" id="edit_n_available" name="available"> Available</label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="toggleModal('editNewspaperModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript for Modals & Interactive Edits -->
+    <script>
+        function toggleModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.style.display = modal.style.display === 'none' ? 'flex' : 'none';
+            }
+        }
+
+        function openEditBookModal(id, title, author, category, isbn, desc, available) {
+            document.getElementById('editBookForm').action = '/books/' + id + '/edit/';
+            document.getElementById('edit_book_title').value = title;
+            document.getElementById('edit_book_author').value = author;
+            document.getElementById('edit_book_category').value = category;
+            document.getElementById('edit_book_isbn').value = isbn;
+            document.getElementById('edit_book_description').value = desc;
+            document.getElementById('edit_book_available').checked = available;
+            toggleModal('editBookModal');
+        }
+
+        function openEditComputerModal(id, sysNum, status, loc, notes) {
+            document.getElementById('editComputerForm').action = '/computers/' + id + '/edit/';
+            document.getElementById('edit_pc_system_number').value = sysNum;
+            document.getElementById('edit_pc_status').value = status;
+            document.getElementById('edit_pc_location').value = loc;
+            document.getElementById('edit_pc_notes').value = notes;
+            toggleModal('editComputerModal');
+        }
+
+        function openEditAnnouncementModal(id, title, content, category, isActive) {
+            document.getElementById('editAnnouncementForm').action = '/announcements/' + id + '/edit/';
+            document.getElementById('edit_ann_title').value = title;
+            document.getElementById('edit_ann_content').value = content;
+            document.getElementById('edit_ann_category').value = category;
+            document.getElementById('edit_ann_active').checked = isActive;
+            toggleModal('editAnnouncementModal');
+        }
+
+        function openEditJournalModal(id, name, pub, vol, issue, date, cat, avail) {
+            document.getElementById('editJournalForm').action = '/journals/' + id + '/edit/';
+            document.getElementById('edit_j_name').value = name;
+            document.getElementById('edit_j_publisher').value = pub;
+            document.getElementById('edit_j_volume').value = vol;
+            document.getElementById('edit_j_issue').value = issue;
+            document.getElementById('edit_j_date').value = date;
+            document.getElementById('edit_j_category').value = cat;
+            document.getElementById('edit_j_available').checked = avail;
+            toggleModal('editJournalModal');
+        }
+
+        function openEditNewspaperModal(id, name, lang, date, copies, avail) {
+            document.getElementById('editNewspaperForm').action = '/newspapers/' + id + '/edit/';
+            document.getElementById('edit_n_name').value = name;
+            document.getElementById('edit_n_language').value = lang;
+            document.getElementById('edit_n_date').value = date;
+            document.getElementById('edit_n_copies').value = copies;
+            document.getElementById('edit_n_available').checked = avail;
+            toggleModal('editNewspaperModal');
+        }
+
+        // Close modal when clicking outside box
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal-backdrop')) {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

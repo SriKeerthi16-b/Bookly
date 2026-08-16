@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookly - Choose Your Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body class="gateway-body">
+    <div class="gateway-wrapper">
+        <header class="gateway-header">
+            <div class="brand-logo">
+                <span class="logo-icon">📖</span>
+                <div>
+                    <h1 class="logo-title">Bookly</h1>
+                    <p class="logo-subtitle">Digital Library Management System</p>
+                </div>
+            </div>
+            <a href="{% url 'home' %}" class="back-home-link">← Browse Public Catalog</a>
+        </header>
+
+        {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="gateway-intro">
+            <h2>Select Your Portal</h2>
+            <p>Access your personalized library dashboard, borrowing services, and academic resources.</p>
+        </div>
+
+        <div class="portals-grid">
+            <!-- Student Portal Card -->
+            <div class="portal-card student-card">
+                <div class="portal-icon-wrapper">
+                    <span class="portal-icon">👨‍🎓</span>
+                    <span class="portal-tag">Students</span>
+                </div>
+                <h3>Student Portal</h3>
+                <p>Browse books, borrow up to 3 titles for 14 days, reserve high-demand books in queue, and track lab computers.</p>
+                <div class="portal-actions">
+                    <a href="{% url 'student_login' %}" class="btn btn-primary student-btn">Student Login</a>
+                    <a href="{% url 'student_register' %}" class="btn btn-secondary">Student Registration</a>
+                </div>
+            </div>
+
+            <!-- Faculty Portal Card -->
+            <div class="portal-card faculty-card">
+                <div class="portal-icon-wrapper">
+                    <span class="portal-icon">👩‍🏫</span>
+                    <span class="portal-tag">Faculty</span>
+                </div>
+                <h3>Faculty Portal</h3>
+                <p>Extended 30-day loan duration, up to 6 simultaneous books, access peer-reviewed journals and syllabus archives.</p>
+                <div class="portal-actions">
+                    <a href="{% url 'faculty_login' %}" class="btn btn-primary faculty-btn">Faculty Login</a>
+                    <a href="{% url 'faculty_register' %}" class="btn btn-secondary">Faculty Registration</a>
+                </div>
+            </div>
+
+            <!-- Librarian Portal Card -->
+            <div class="portal-card librarian-card">
+                <div class="portal-icon-wrapper">
+                    <span class="portal-icon">👩‍💼</span>
+                    <span class="portal-tag">Staff Only</span>
+                </div>
+                <h3>Librarian Portal</h3>
+                <p>Master control center to add, edit, and delete books, journals, news & computers, manage returns, and publish announcements.</p>
+                <div class="portal-actions">
+                    <a href="{% url 'librarian_login' %}" class="btn btn-primary librarian-btn">Staff Login</a>
+                    <a href="{% url 'librarian_register' %}" class="btn btn-secondary">Staff Registration</a>
+                </div>
+            </div>
+        </div>
+
+        <footer class="gateway-footer">
+            <p>© 2026 Bookly Digital Library. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>
