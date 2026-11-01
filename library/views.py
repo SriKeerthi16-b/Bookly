@@ -4,13 +4,23 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.db.models import Q
 from django.utils import timezone
+from django.http import JsonResponse
 from datetime import timedelta
 from .models import (
     Book, Journal, Newspaper, Computer, Profile,
-    BorrowRecord, BookReservation, LibraryVisit, Announcement
+    BorrowRecord, BookReservation, LibraryVisit, Announcement,
+    Notification, NotificationRead
+)
+from .notifications_helper import (
+    create_broadcast_notification,
+    create_personal_notification,
+    get_user_notifications_payload,
+    mark_notification_as_read,
+    mark_all_notifications_as_read
 )
 
 LIBRARIAN_SECRET_CODE = "BOOKLY-ADMIN-2026"
+
 
 
 def get_user_profile(user):
@@ -267,6 +277,7 @@ def home(request):
         "user_borrowed": user_borrowed,
         "user_reservations": user_reservations,
         "current_visit": current_visit,
+        "notifications_data": get_user_notifications_payload(request),
     })
 
 
@@ -328,6 +339,7 @@ def student_dashboard(request):
         "computer_working": computers.filter(status="working").count(),
         "computer_in_use": computers.filter(status="in_use").count(),
         "computer_maintenance": computers.filter(status="maintenance").count(),
+        "notifications_data": get_user_notifications_payload(request),
     })
 
 
@@ -385,6 +397,7 @@ def faculty_dashboard(request):
         "computer_working": computers.filter(status="working").count(),
         "computer_in_use": computers.filter(status="in_use").count(),
         "computer_maintenance": computers.filter(status="maintenance").count(),
+        "notifications_data": get_user_notifications_payload(request),
     })
 
 
@@ -431,6 +444,7 @@ def librarian_dashboard(request):
         "computer_maintenance": computers.filter(status="maintenance").count(),
         "total_visits_today": today_visits.count(),
         "currently_inside": today_visits.filter(status="checked_in").count(),
+        "notifications_data": get_user_notifications_payload(request),
     })
 
 
@@ -452,9 +466,16 @@ def add_book(request):
             if Book.objects.filter(isbn=isbn).exists():
                 messages.error(request, f"A book with ISBN {isbn} already exists.")
             else:
-                Book.objects.create(
+                book = Book.objects.create(
                     title=title, author=author, category=category,
                     isbn=isbn, description=description
+                )
+                create_broadcast_notification(
+                    notification_type="book_added",
+                    title=f"📚 New Book Arrival: {book.title}",
+                    message=f"'{book.title}' by {book.author} has arrived in the {book.category} section. Available to borrow now!",
+                    category=book.category or "Book",
+                    link="/#books-section"
                 )
                 messages.success(request, f'Book "{title}" added to library inventory.')
         else:
@@ -504,9 +525,16 @@ def add_journal(request):
         category = request.POST.get("category", "").strip()
 
         if name:
-            Journal.objects.create(
+            journal = Journal.objects.create(
                 name=name, publisher=publisher, volume=volume,
                 issue=issue, publication_date=publication_date, category=category
+            )
+            create_broadcast_notification(
+                notification_type="journal_added",
+                title=f"📖 New Journal Added: {journal.name}",
+                message=f"Volume {journal.volume or '1'} Issue {journal.issue or 'Current'} published by {journal.publisher or 'Academic Press'} ({journal.category}) is now in research archives.",
+                category=journal.category or "Journal",
+                link="/#journals-section"
             )
             messages.success(request, f'Journal "{name}" added.')
     return redirect("librarian_dashboard")
@@ -551,9 +579,16 @@ def add_newspaper(request):
         copies = request.POST.get("copies") or 1
 
         if name:
-            Newspaper.objects.create(
+            newspaper = Newspaper.objects.create(
                 name=name, language=language,
                 publication_date=publication_date, copies=copies
+            )
+            create_broadcast_notification(
+                notification_type="newspaper_added",
+                title=f"📰 Today's Newspaper Available: {newspaper.name}",
+                message=f"{newspaper.name} ({newspaper.language}) with {newspaper.copies} copies is available in the periodical reading section.",
+                category="Newspaper",
+                link="/#newspapers-section"
             )
             messages.success(request, f'Newspaper "{name}" added.')
     return redirect("librarian_dashboard")
@@ -657,9 +692,16 @@ def add_announcement(request):
         category = request.POST.get("category", "general")
 
         if title and content:
-            Announcement.objects.create(
+            announcement = Announcement.objects.create(
                 title=title, content=content, category=category,
                 author=request.user
+            )
+            create_broadcast_notification(
+                notification_type="announcement_added",
+                title=f"📢 Library Notice: {announcement.title}",
+                message=announcement.content,
+                category=announcement.get_category_display() if hasattr(announcement, 'get_category_display') else "Announcement",
+                link="/#announcements-sec"
             )
             messages.success(request, f'Announcement "{title}" published to library bulletin.')
         else:
@@ -759,6 +801,14 @@ def return_book(request, record_id):
     if next_reservation:
         next_reservation.status = "notified"
         next_reservation.save(update_fields=["status"])
+        create_personal_notification(
+            user=next_reservation.user,
+            notification_type="reservation_ready",
+            title=f"🎉 Reserved Book Ready: {book.title}",
+            message=f"Great news! Your waitlisted book '{book.title}' is returned and held for you at the circulation desk.",
+            category="Waitlist Ready",
+            link="/student/#reserved-sec"
+        )
         messages.info(request, f'Book returned. Reader {next_reservation.user.username} has been notified from the queue!')
     else:
         messages.success(request, f'"{book.title}" has been returned to the shelves.')
@@ -830,4 +880,57 @@ def toggle_visit(request):
         messages.success(request, f"Checked in to the Library at {timezone.localtime(new_visit.entry_time).strftime('%I:%M %p')}. Welcome!")
 
     return redirect(request.META.get("HTTP_REFERER", "home"))
+
+
+# -------------------------------------------------------------------
+# Notification Endpoints
+# -------------------------------------------------------------------
+
+def get_notifications_api(request):
+    """Returns unread notifications and list for current user."""
+    payload = get_user_notifications_payload(request)
+    return JsonResponse(payload)
+
+
+def mark_notification_read_view(request, notification_id):
+    """Marks a single notification as read."""
+    success = mark_notification_as_read(request.user, notification_id)
+    return JsonResponse({"success": success})
+
+
+def mark_all_notifications_read_view(request):
+    """Marks all notifications as read."""
+    success = mark_all_notifications_as_read(request.user)
+    return JsonResponse({"success": success})
+
+
+# -------------------------------------------------------------------
+# PWA Root Handlers (Manifest & Service Worker)
+# -------------------------------------------------------------------
+
+def pwa_manifest_view(request):
+    import os
+    from django.conf import settings
+    from django.http import HttpResponse
+    manifest_path = os.path.join(settings.BASE_DIR, "static", "manifest.json")
+    try:
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        return HttpResponse(content, content_type="application/manifest+json")
+    except Exception as e:
+        return HttpResponse("{}", content_type="application/manifest+json")
+
+
+def pwa_sw_view(request):
+    import os
+    from django.conf import settings
+    from django.http import HttpResponse
+    sw_path = os.path.join(settings.BASE_DIR, "static", "js", "sw.js")
+    try:
+        with open(sw_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        return HttpResponse(content, content_type="application/javascript; charset=utf-8")
+    except Exception as e:
+        return HttpResponse("// SW load error", content_type="application/javascript; charset=utf-8")
+
 

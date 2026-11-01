@@ -17,10 +17,11 @@ class Book(models.Model):
         return self.title
 
     def active_borrow_record(self):
-        return self.borrowrecord_set.filter(status__in=["issued", "overdue"]).order_by("-issue_date").first()
+        return self.borrow_records.filter(status__in=["issued", "overdue"]).order_by("-issue_date").first()
 
     def queue_count(self):
-        return self.bookreservation_set.filter(status="waiting").count()
+        return self.reservations.filter(status="waiting").count()
+
 
 
 class Journal(models.Model):
@@ -187,4 +188,51 @@ class Announcement(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Notification(models.Model):
+    TYPE_CHOICES = (
+        ("book_added", "New Book Arrival"),
+        ("journal_added", "New Journal Added"),
+        ("newspaper_added", "Daily Newspaper Available"),
+        ("announcement_added", "Campus Library Bulletin"),
+        ("reservation_ready", "Reserved Book Ready for Pickup"),
+        ("loan_reminder", "Loan Due Reminder"),
+        ("general", "General Notice"),
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name="personal_notifications")
+    notification_type = models.CharField(max_length=40, choices=TYPE_CHOICES, default="general")
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    category = models.CharField(max_length=50, default="general")
+    link = models.CharField(max_length=255, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        target = self.user.username if self.user else "Everyone (Broadcast)"
+        return f"[{self.notification_type}] {self.title} -> {target}"
+
+    def is_read_by(self, user):
+        if not user or not user.is_authenticated:
+            return False
+        if self.user:
+            return self.is_read
+        return NotificationRead.objects.filter(user=user, notification=self).exists()
+
+
+class NotificationRead(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="read_notifications")
+    notification = models.ForeignKey(Notification, on_delete=models.CASCADE, related_name="read_records")
+    read_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "notification")
+
+    def __str__(self):
+        return f"{self.user.username} read notification {self.notification_id}"
+
 

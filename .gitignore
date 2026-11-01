@@ -1,0 +1,20 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Static files collected
+staticfiles/
+
+# Local databases (optional, but good for production)
+# db.sqlite3
+
+# OS generated
+.DS_Store
+Thumbs.db

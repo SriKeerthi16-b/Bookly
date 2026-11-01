@@ -1,0 +1,64 @@
+{
+  "name": "Bookly - Campus Digital Library",
+  "short_name": "Bookly",
+  "description": "Next-generation mobile library management system for students, faculty, and librarians.",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["education", "books", "productivity"],
+  "icons": [
+    {
+      "src": "/static/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/images/bookly-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Browse Books",
+      "short_name": "Books",
+      "description": "Explore the book catalog and check availability",
+      "url": "/#books-section",
+      "icons": [{ "src": "/static/images/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Student Hub",
+      "short_name": "Student",
+      "description": "View active loans, waitlist, and digital gate pass",
+      "url": "/student/",
+      "icons": [{ "src": "/static/images/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Computer Lab",
+      "short_name": "Lab",
+      "description": "Live computer workstations vacancy status",
+      "url": "/#lab-section",
+      "icons": [{ "src": "/static/images/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Library Pass",
+      "short_name": "Gate Pass",
+      "description": "1-click check in and check out pass",
+      "url": "/student/#gate-pass",
+      "icons": [{ "src": "/static/images/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

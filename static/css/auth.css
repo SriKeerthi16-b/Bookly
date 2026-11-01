@@ -1,33 +1,48 @@
 /* ==========================================================================
    Bookly Authentication & Role Gateway Styles
+   Theme: Warm Academic / Classic Library (Parchment, Espresso, Burgundy & Gold)
    ========================================================================== */
 
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Lora:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 :root {
-    --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    --font-serif: 'Lora', Georgia, 'Times New Roman', serif;
+    --font-display: 'Cinzel', 'Lora', Georgia, serif;
+    --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     
-    --color-student: #4338ca;
-    --color-student-light: #e0e7ff;
-    --color-student-hover: #3730a3;
+    /* Academic Role Colors */
+    --color-student: #1e3a5f;
+    --color-student-light: #e8f0fa;
+    --color-student-hover: #142842;
 
-    --color-faculty: #0f766e;
-    --color-faculty-light: #ccfbf1;
-    --color-faculty-hover: #115e59;
+    --color-faculty: #26533c;
+    --color-faculty-light: #eaf3ed;
+    --color-faculty-hover: #193a29;
 
-    --color-librarian: #9f1239;
-    --color-librarian-light: #ffe4e6;
-    --color-librarian-hover: #881337;
+    --color-librarian: #781d2a;
+    --color-librarian-light: #faeaed;
+    --color-librarian-hover: #59151e;
 
-    --bg-page: #f8fafc;
-    --bg-card: #ffffff;
-    --text-main: #0f172a;
-    --text-muted: #64748b;
-    --border-color: #e2e8f0;
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-    --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 18px;
+    --color-gold: #b87b28;
+    --color-gold-light: #fdf5e6;
+    --color-gold-hover: #9c671f;
+
+    /* Parchment & Espresso Backgrounds */
+    --bg-page: #fbf7ee;
+    --bg-card: #fffdfa;
+    --bg-card-subtle: #f4ece0;
+    --text-main: #231b15;
+    --text-secondary: #4a3b32;
+    --text-muted: #7d6e64;
+    --border-color: #e5dac9;
+    --border-gold: #d4b584;
+
+    --shadow-sm: 0 1px 3px rgba(45, 30, 20, 0.05);
+    --shadow-md: 0 4px 8px -1px rgba(45, 30, 20, 0.08), 0 2px 4px -2px rgba(45, 30, 20, 0.05);
+    --shadow-lg: 0 12px 28px -3px rgba(45, 30, 20, 0.12), 0 4px 8px -4px rgba(45, 30, 20, 0.05);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
 }
 
 * {
@@ -53,7 +68,7 @@ body {
     justify-content: center;
     align-items: center;
     padding: 2.5rem 1.5rem;
-    background: radial-gradient(circle at 10% 20%, rgba(224, 231, 255, 0.5) 0%, rgba(248, 250, 252, 1) 90%);
+    background: radial-gradient(circle at 10% 20%, rgba(220, 190, 145, 0.28) 0%, rgba(251, 247, 238, 1) 90%), #fbf7ee;
 }
 
 .gateway-wrapper {
@@ -66,12 +81,14 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2.5rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1.25rem;
 }
 
 .brand-logo {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.85rem;
 }
 
 .logo-icon {
@@ -79,28 +96,36 @@ body {
 }
 
 .logo-title {
-    font-size: 1.75rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    color: #0f172a;
+    font-family: var(--font-serif);
+    font-size: 1.85rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text-main);
 }
 
 .logo-subtitle {
-    font-size: 0.875rem;
+    font-size: 0.825rem;
     color: var(--text-muted);
     font-weight: 500;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
 }
 
 .back-home-link {
     text-decoration: none;
-    color: var(--text-muted);
+    color: var(--color-gold);
     font-weight: 600;
     font-size: 0.9rem;
     transition: color 0.2s ease;
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
 }
 
 .back-home-link:hover {
     color: var(--text-main);
+    border-color: var(--color-gold);
 }
 
 .gateway-intro {
@@ -109,15 +134,17 @@ body {
 }
 
 .gateway-intro h2 {
-    font-size: 2.25rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
+    font-family: var(--font-serif);
+    font-size: 2.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
     margin-bottom: 0.5rem;
+    color: var(--text-main);
 }
 
 .gateway-intro p {
     color: var(--text-muted);
-    font-size: 1.1rem;
+    font-size: 1.05rem;
 }
 
 .portals-grid {
@@ -133,14 +160,30 @@ body {
     border-radius: var(--radius-lg);
     padding: 2.25rem 2rem;
     box-shadow: var(--shadow-md);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     display: flex;
     flex-direction: column;
+    position: relative;
+    overflow: hidden;
 }
+
+.portal-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+}
+
+.student-card::before { background: var(--color-student); }
+.faculty-card::before { background: var(--color-faculty); }
+.librarian-card::before { background: var(--color-librarian); }
 
 .portal-card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-lg);
+    border-color: var(--border-gold);
 }
 
 .portal-icon-wrapper {
@@ -155,14 +198,12 @@ body {
 }
 
 .portal-tag {
-    font-size: 0.75rem;
+    font-size: 0.725rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     padding: 0.35rem 0.75rem;
-    border-radius: 999px;
-    background: #f1f5f9;
-    color: var(--text-muted);
+    border-radius: 4px;
 }
 
 .student-card .portal-tag {
@@ -181,14 +222,16 @@ body {
 }
 
 .portal-card h3 {
-    font-size: 1.5rem;
+    font-family: var(--font-serif);
+    font-size: 1.55rem;
     font-weight: 700;
     margin-bottom: 0.75rem;
+    color: var(--text-main);
 }
 
 .portal-card p {
     color: var(--text-muted);
-    font-size: 0.95rem;
+    font-size: 0.925rem;
     line-height: 1.6;
     margin-bottom: 2rem;
     flex-grow: 1;
@@ -204,6 +247,8 @@ body {
     text-align: center;
     color: var(--text-muted);
     font-size: 0.85rem;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1.5rem;
 }
 
 /* --------------------------------------------------------------------------
@@ -215,7 +260,7 @@ body {
     justify-content: center;
     font-family: var(--font-main);
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.925rem;
     padding: 0.75rem 1.25rem;
     border-radius: var(--radius-sm);
     text-decoration: none;
@@ -258,14 +303,14 @@ body {
 }
 
 .btn-secondary {
-    background: #f1f5f9;
-    color: #334155;
+    background: var(--bg-card-subtle);
+    color: var(--text-main);
     border: 1px solid var(--border-color);
 }
 
 .btn-secondary:hover {
-    background: #e2e8f0;
-    color: #0f172a;
+    background: #eaddcb;
+    border-color: var(--border-gold);
 }
 
 /* --------------------------------------------------------------------------
@@ -276,19 +321,20 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem 1.25rem;
+    padding: 2.5rem 1.25rem;
+    background: var(--bg-page);
 }
 
 .student-theme {
-    background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
+    background: radial-gradient(circle at 10% 20%, rgba(200, 215, 235, 0.4) 0%, rgba(251, 247, 238, 1) 90%), #fbf7ee;
 }
 
 .faculty-theme {
-    background: linear-gradient(135deg, #f0fdfa 0%, #f8fafc 100%);
+    background: radial-gradient(circle at 10% 20%, rgba(205, 225, 215, 0.4) 0%, rgba(251, 247, 238, 1) 90%), #fbf7ee;
 }
 
 .librarian-theme {
-    background: linear-gradient(135deg, #fff1f2 0%, #f8fafc 100%);
+    background: radial-gradient(circle at 10% 20%, rgba(235, 205, 215, 0.4) 0%, rgba(251, 247, 238, 1) 90%), #fbf7ee;
 }
 
 .auth-card {
@@ -310,24 +356,25 @@ body {
 }
 
 .auth-side {
-    background: #0f172a;
+    background: #1c1511;
     color: #ffffff;
     padding: 3rem 2.5rem;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    border-right: 1px solid var(--border-color);
 }
 
 .student-theme .auth-side {
-    background: linear-gradient(145deg, #1e1b4b 0%, #312e81 100%);
+    background: linear-gradient(145deg, #122135 0%, #1e3a5f 100%);
 }
 
 .faculty-theme .auth-side {
-    background: linear-gradient(145deg, #042f2e 0%, #115e59 100%);
+    background: linear-gradient(145deg, #12291d 0%, #26533c 100%);
 }
 
 .librarian-theme .auth-side {
-    background: linear-gradient(145deg, #4c0519 0%, #881337 100%);
+    background: linear-gradient(145deg, #421118 0%, #781d2a 100%);
 }
 
 .brand {
@@ -342,27 +389,33 @@ body {
 }
 
 .brand-title {
-    font-size: 1.5rem;
-    font-weight: 800;
+    font-family: var(--font-serif);
+    font-size: 1.6rem;
+    font-weight: 700;
     display: block;
     line-height: 1.1;
+    color: #fbf7ee;
 }
 
 .brand-role {
-    font-size: 0.8rem;
+    font-size: 0.775rem;
     font-weight: 600;
-    opacity: 0.9;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #e5dac9;
 }
 
 .auth-side-content h2 {
-    font-size: 1.75rem;
-    font-weight: 800;
+    font-family: var(--font-serif);
+    font-size: 1.85rem;
+    font-weight: 700;
     margin-bottom: 0.75rem;
-    line-height: 1.2;
+    line-height: 1.25;
+    color: #fbf7ee;
 }
 
 .auth-side-content p {
-    color: #cbd5e1;
+    color: #d6c7b2;
     font-size: 0.95rem;
     line-height: 1.6;
     margin-bottom: 1.5rem;
@@ -373,12 +426,12 @@ body {
     flex-direction: column;
     gap: 0.75rem;
     font-size: 0.9rem;
-    color: #e2e8f0;
+    color: #f0e6d6;
 }
 
 .side-portal-switch {
     margin-top: 2rem;
-    color: #94a3b8;
+    color: #d4b584;
     text-decoration: none;
     font-size: 0.85rem;
     font-weight: 600;
@@ -387,6 +440,7 @@ body {
 
 .side-portal-switch:hover {
     color: #ffffff;
+    text-decoration: underline;
 }
 
 .auth-form-side {
@@ -394,6 +448,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    background: var(--bg-card);
 }
 
 .form-header {
@@ -401,10 +456,12 @@ body {
 }
 
 .form-header h2 {
-    font-size: 1.75rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
+    font-family: var(--font-serif);
+    font-size: 1.85rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     margin-bottom: 0.35rem;
+    color: var(--text-main);
 }
 
 .muted {
@@ -437,9 +494,11 @@ body {
 }
 
 label {
-    font-size: 0.85rem;
+    font-size: 0.825rem;
     font-weight: 600;
-    color: #334155;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
 input, select, textarea {
@@ -455,8 +514,8 @@ input, select, textarea {
 }
 
 input:focus, select:focus, textarea:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    border-color: var(--color-gold);
+    box-shadow: 0 0 0 3px rgba(184, 123, 40, 0.18);
 }
 
 .field-hint {
@@ -469,11 +528,13 @@ input:focus, select:focus, textarea:focus {
     text-align: center;
     font-size: 0.9rem;
     color: var(--text-muted);
+    border-top: 1px solid var(--border-color);
+    padding-top: 1.25rem;
 }
 
 .form-footer a {
     color: var(--color-student);
-    font-weight: 600;
+    font-weight: 700;
     text-decoration: none;
 }
 
@@ -483,6 +544,10 @@ input:focus, select:focus, textarea:focus {
 
 .librarian-theme .form-footer a {
     color: var(--color-librarian);
+}
+
+.form-footer a:hover {
+    text-decoration: underline;
 }
 
 .form-footer .public-link {
@@ -506,25 +571,25 @@ input:focus, select:focus, textarea:focus {
 }
 
 .alert-success {
-    background: #dcfce7;
-    color: #166534;
-    border: 1px solid #bbf7d0;
+    background: #eaf4ed;
+    color: #1e5233;
+    border: 1px solid #c4e4ce;
 }
 
 .alert-error, .alert-danger {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
+    background: #faeaed;
+    color: #781d2a;
+    border: 1px solid #f2cad0;
 }
 
 .alert-warning {
-    background: #fef3c7;
-    color: #92400e;
-    border: 1px solid #fde68a;
+    background: #fdf5e6;
+    color: #8c5816;
+    border: 1px solid #f5ddb0;
 }
 
 .alert-info {
-    background: #e0f2fe;
-    color: #075985;
-    border: 1px solid #bae6fd;
+    background: #e8f0fa;
+    color: #1e3a5f;
+    border: 1px solid #cadbf2;
 }

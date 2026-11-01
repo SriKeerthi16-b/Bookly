@@ -1,9 +1,14 @@
 from django.contrib import admin
 from django.urls import path
 from library import views
+from library import api
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+
+    # PWA Service Worker & Manifest
+    path("manifest.json", views.pwa_manifest_view, name="pwa_manifest"),
+    path("sw.js", views.pwa_sw_view, name="pwa_sw"),
 
     # Gateways & Main
     path("", views.home, name="home"),
@@ -57,5 +62,19 @@ urlpatterns = [
     path("records/<int:record_id>/return/", views.return_book, name="return_book"),
     path("reservations/<int:reservation_id>/cancel/", views.cancel_reservation, name="cancel_reservation"),
     path("visit/toggle/", views.toggle_visit, name="toggle_visit"),
+
+    # Real-Time Notifications
+    path("notifications/api/", views.get_notifications_api, name="notifications_api"),
+    path("notifications/<int:notification_id>/read/", views.mark_notification_read_view, name="mark_notification_read"),
+    path("notifications/read-all/", views.mark_all_notifications_read_view, name="mark_all_notifications_read"),
+
+    # Mobile REST API v1 Endpoints
+    path("api/v1/catalog/", api.api_catalog, name="api_catalog"),
+    path("api/v1/notifications/", api.api_notifications, name="api_notifications"),
+    path("api/v1/notifications/<int:notification_id>/read/", api.api_mark_notification_read, name="api_mark_notification_read"),
+    path("api/v1/notifications/read-all/", api.api_mark_all_read, name="api_mark_all_read"),
+    path("api/v1/profile/", api.api_profile, name="api_profile"),
+    path("api/v1/visits/toggle/", api.api_toggle_visit, name="api_toggle_visit"),
 ]
+
 

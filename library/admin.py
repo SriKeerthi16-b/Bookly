@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Book, Journal, Newspaper, Computer, Profile,
-    BorrowRecord, BookReservation, LibraryVisit, Announcement
+    BorrowRecord, BookReservation, LibraryVisit, Announcement, Notification, NotificationRead
 )
 
 
@@ -67,3 +67,15 @@ class AnnouncementAdmin(admin.ModelAdmin):
     list_filter = ("category", "is_active", "created_at")
     search_fields = ("title", "content")
 
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ("title", "notification_type", "user", "created_at")
+    list_filter = ("notification_type", "created_at")
+    search_fields = ("title", "message")
+
+
+@admin.register(NotificationRead)
+class NotificationReadAdmin(admin.ModelAdmin):
+    list_display = ("user", "notification", "read_at")
+    search_fields = ("user__username", "notification__title")
