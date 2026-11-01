@@ -2,6 +2,7 @@
 
 A full-featured, multi-role Django web application for college libraries.
 
+
 ---
 
 ## 🌟 Key Features
@@ -57,6 +58,7 @@ python -m venv venv
 
 ## 🛠️ Tech Stack
 - **Backend**: Python 3, Django 5.x, SQLite
-- **Frontend**: Django Templates, Vanilla CSS, Vanilla JS, Plus Jakarta Sans typography
+- **Frontend**: Django Templates, Warm Academic CSS, Plus Jakarta Sans, Lora & Cinzel typography
 - **Admin**: Django Administration (`/admin/`)
+- **Production Server**: Gunicorn & WhiteNoise
 
