@@ -227,6 +227,26 @@ def user_logout(request):
 # -------------------------------------------------------------------
 
 def home(request):
+    """
+    Application Entry Point:
+    - If unauthenticated, displays the Role Gateway / Registration & Login portal first.
+    - If authenticated, automatically routes to the user's specific dashboard.
+    """
+    if not request.user.is_authenticated:
+        return render(request, "auth/role_gateway.html")
+
+    profile = get_user_profile(request.user)
+    if profile:
+        if profile.role == "librarian":
+            return redirect("librarian_dashboard")
+        elif profile.role == "faculty":
+            return redirect("faculty_dashboard")
+        elif profile.role == "student":
+            return redirect("student_dashboard")
+    return render(request, "auth/role_gateway.html")
+
+
+def catalog_view(request):
     q = request.GET.get("q", "").strip()
     category = request.GET.get("category", "").strip()
 
@@ -279,6 +299,7 @@ def home(request):
         "current_visit": current_visit,
         "notifications_data": get_user_notifications_payload(request),
     })
+
 
 
 def student_dashboard(request):

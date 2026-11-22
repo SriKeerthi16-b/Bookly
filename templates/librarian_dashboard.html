@@ -23,7 +23,8 @@
         </div>
         <div class="nav-actions">
             <span class="user-greeting">Staff: <strong>{{ request.user.username }}</strong></span>
-            <a href="{% url 'home' %}" class="nav-link" target="_blank">🌐 View Public Portal</a>
+            <a href="{% url 'catalog' %}" class="nav-link" target="_blank">🌐 Catalog Overview</a>
+
             <a href="{% url 'logout' %}" class="btn-logout">Logout ↪</a>
         </div>
     </header>

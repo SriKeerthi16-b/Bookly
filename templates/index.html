@@ -24,7 +24,8 @@
             </div>
 
             <p class="menu-label">EXPLORE</p>
-            <a class="nav-item active" href="{% url 'home' %}">⌂ <span>Home & Catalog</span></a>
+            <a class="nav-item active" href="{% url 'catalog' %}">⌂ <span>Home & Catalog</span></a>
+
             <a class="nav-item" href="#books-section">📚 <span>All Books ({{ books|length }})</span></a>
             <a class="nav-item" href="#journals-section">📖 <span>Journals ({{ journals|length }})</span></a>
             <a class="nav-item" href="#newspapers-section">📰 <span>Newspapers ({{ newspapers|length }})</span></a>
@@ -60,11 +61,12 @@
         <main class="main-content">
             <!-- Top Search & User Header -->
             <header class="top-header">
-                <form method="get" action="{% url 'home' %}#books-section" class="top-search-form">
+                <form method="get" action="{% url 'catalog' %}#books-section" class="top-search-form">
                     <span class="search-symbol">🔍</span>
                     <input type="text" name="q" value="{{ search_query }}" placeholder="Search library catalog by title, author, subject, or ISBN..." class="header-search-input">
                     {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
                 </form>
+
 
                 <div class="header-right">
                     {% if request.user.is_authenticated %}
@@ -153,10 +155,11 @@
                             <h3>🔍 Instant Catalog Search</h3>
                             <p class="muted">Find textbooks, syllabus references, and authors</p>
                         </div>
-                        <form method="get" action="{% url 'home' %}#books-section" class="instant-search-box">
+                        <form method="get" action="{% url 'catalog' %}#books-section" class="instant-search-box">
                             <input type="text" name="q" value="{{ search_query }}" placeholder="Search by title, author, category, or ISBN...">
                             <button type="submit" class="btn btn-primary">Search</button>
                         </form>
+
                         <div class="popular-tags">
                             <span>Popular Topics:</span>
                             <a href="?q=Algorithms#books-section" class="pill-search">Algorithms</a>
@@ -233,7 +236,8 @@
 
                     <!-- Category Pills -->
                     <div class="category-filters-bar">
-                        <a href="{% url 'home' %}#books-section" class="cat-pill {% if not selected_category %}active{% endif %}">All Categories</a>
+                        <a href="{% url 'catalog' %}#books-section" class="cat-pill {% if not selected_category %}active{% endif %}">All Categories</a>
+
                         {% for cat in categories %}
                             {% if cat %}
                                 <a href="?category={{ cat }}#books-section" class="cat-pill {% if selected_category == cat %}active{% endif %}">{{ cat }}</a>

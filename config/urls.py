@@ -13,9 +13,11 @@ urlpatterns = [
     # Gateways & Main
     path("", views.home, name="home"),
     path("auth/", views.auth_gateway, name="auth_gateway"),
+    path("catalog/", views.catalog_view, name="catalog"),
     path("login/", views.auth_gateway, name="login"),
     path("register/", views.auth_gateway, name="register"),
     path("logout/", views.user_logout, name="logout"),
+
 
     # Dedicated Role Authentication
     path("auth/student/login/", views.student_login, name="student_login"),

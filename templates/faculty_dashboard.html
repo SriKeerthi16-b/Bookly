@@ -23,7 +23,8 @@
         </div>
         <div class="nav-actions">
             <span class="user-greeting">Prof. <strong>{{ request.user.username }}</strong> ({{ profile.department|default:"Faculty" }})</span>
-            <a href="{% url 'home' %}" class="nav-link">🌐 Public Catalog</a>
+            <a href="{% url 'catalog' %}" class="nav-link">🌐 Catalog Overview</a>
+
             <a href="{% url 'logout' %}" class="btn-logout">Logout ↪</a>
         </div>
     </header>
