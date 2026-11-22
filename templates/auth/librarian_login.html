@@ -55,7 +55,10 @@
                     <input id="username" name="username" required placeholder="e.g. librarian_admin" autofocus>
                 </div>
                 <div class="form-group">
-                    <label for="password">Password</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label for="password">Password</label>
+                        <a href="{% url 'forgot_password' %}?role=librarian" style="font-size: 0.775rem; color: var(--color-librarian); text-decoration: none; font-weight: 700;">Forgot Password?</a>
+                    </div>
                     <input id="password" type="password" name="password" required placeholder="••••••••">
                 </div>
                 <button type="submit" class="btn btn-primary librarian-btn btn-block">Sign In to Control Center</button>

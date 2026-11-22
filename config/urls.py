@@ -16,7 +16,9 @@ urlpatterns = [
     path("catalog/", views.catalog_view, name="catalog"),
     path("login/", views.auth_gateway, name="login"),
     path("register/", views.auth_gateway, name="register"),
+    path("forgot-password/", views.forgot_password, name="forgot_password"),
     path("logout/", views.user_logout, name="logout"),
+
 
 
     # Dedicated Role Authentication

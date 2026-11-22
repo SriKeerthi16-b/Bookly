@@ -216,10 +216,90 @@ def librarian_register(request):
     return render(request, "auth/librarian_register.html", {"secret_hint": LIBRARIAN_SECRET_CODE})
 
 
+def forgot_password(request):
+    """
+    Campus Self-Service Password Reset:
+    Validates user identity against registered campus credentials:
+    - Student: Username + (Member ID / Roll No OR Phone Number)
+    - Faculty: Username + (Faculty ID OR Department)
+    - Librarian: Username + (Staff ID OR Librarian Passcode)
+    Sets new password upon verification and redirects to login.
+    """
+    initial_role = request.GET.get("role", "student").lower()
+    if initial_role not in ["student", "faculty", "librarian"]:
+        initial_role = "student"
+
+    if request.method == "POST":
+        role = request.POST.get("role", "student").lower()
+        username = request.POST.get("username", "").strip()
+        verify_key = request.POST.get("verify_key", "").strip()
+        new_password = request.POST.get("new_password", "")
+        confirm_password = request.POST.get("confirm_password", "")
+
+        if not username or not verify_key or not new_password:
+            messages.error(request, "All fields are required to verify your identity.")
+            return render(request, "auth/forgot_password.html", {"role": role, "username": username})
+
+        if new_password != confirm_password:
+            messages.error(request, "New passwords do not match. Please try again.")
+            return render(request, "auth/forgot_password.html", {"role": role, "username": username})
+
+        if len(new_password) < 6:
+            messages.error(request, "Password must be at least 6 characters long.")
+            return render(request, "auth/forgot_password.html", {"role": role, "username": username})
+
+        try:
+            user = User.objects.get(username__iexact=username)
+        except User.DoesNotExist:
+            messages.error(request, f"No account found with username '{username}'.")
+            return render(request, "auth/forgot_password.html", {"role": role, "username": username})
+
+        profile = get_user_profile(user)
+        if not profile or profile.role != role:
+            messages.error(request, f"User '{username}' is not registered under the {role.capitalize()} portal.")
+            return render(request, "auth/forgot_password.html", {"role": role, "username": username})
+
+        is_verified = False
+        if role == "student":
+            if (profile.member_id and profile.member_id.strip().lower() == verify_key.lower()) or \
+               (profile.phone_number and profile.phone_number.strip() == verify_key):
+                is_verified = True
+            else:
+                messages.error(request, "Verification failed: Roll / Member ID or Phone Number did not match our records.")
+        elif role == "faculty":
+            if (profile.member_id and profile.member_id.strip().lower() == verify_key.lower()) or \
+               (profile.department and profile.department.strip().lower() == verify_key.lower()):
+                is_verified = True
+            else:
+                messages.error(request, "Verification failed: Faculty ID or Department did not match our records.")
+        elif role == "librarian":
+            if (profile.member_id and profile.member_id.strip().lower() == verify_key.lower()) or \
+               (verify_key == LIBRARIAN_SECRET_CODE):
+                is_verified = True
+            else:
+                messages.error(request, "Verification failed: Staff Member ID or Librarian Passcode did not match.")
+
+        if not is_verified:
+            return render(request, "auth/forgot_password.html", {"role": role, "username": username})
+
+        user.set_password(new_password)
+        user.save()
+        messages.success(request, f"Password reset successfully for {user.username}! Please sign in.")
+
+        if role == "faculty":
+            return redirect("faculty_login")
+        elif role == "librarian":
+            return redirect("librarian_login")
+        return redirect("student_login")
+
+    return render(request, "auth/forgot_password.html", {"role": initial_role})
+
+
 def user_logout(request):
     logout(request)
     messages.info(request, "You have been logged out.")
     return redirect("auth_gateway")
+
 
 
 # -------------------------------------------------------------------
