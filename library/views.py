@@ -29,6 +29,34 @@ def get_user_profile(user):
     return getattr(user, "profile", None)
 
 
+def authenticate_user_flexible(request, credential, password):
+    """
+    Flexible credential authentication:
+    Allows user to sign in with:
+    1. Direct Username (standard Django authentication)
+    2. Case-insensitive Username (handles mobile auto-capitalization, e.g. Keerthi vs keerthi)
+    3. Campus Member ID / Roll Number / Faculty ID / Staff ID (e.g. FAC-CS-007, STU-2026, LIB-CHIEF-01)
+    4. Registered Email Address
+    """
+    if not credential or not password:
+        return None
+    # 1. Try standard Django authenticate
+    user = authenticate(request, username=credential, password=password)
+    if user:
+        return user
+
+    # 2. Look up user by case-insensitive username, campus member_id, or email
+    matched_user = (
+        User.objects.filter(username__iexact=credential).first() or
+        User.objects.filter(profile__member_id__iexact=credential).first() or
+        User.objects.filter(email__iexact=credential).first()
+    )
+    if matched_user:
+        return authenticate(request, username=matched_user.username, password=password)
+
+    return None
+
+
 # -------------------------------------------------------------------
 # Role Gateway & Dedicated Authentication
 # -------------------------------------------------------------------
@@ -46,12 +74,15 @@ def auth_gateway(request):
 
 
 def student_login(request):
-    if request.user.is_authenticated:
-        return redirect("student_dashboard")
+    if request.user.is_authenticated and request.method == "GET":
+        profile = get_user_profile(request.user)
+        if profile and profile.role == "student":
+            return redirect("student_dashboard")
+
     if request.method == "POST":
-        username = request.POST.get("username", "").strip()
+        credential = request.POST.get("username", "").strip()
         password = request.POST.get("password", "")
-        user = authenticate(request, username=username, password=password)
+        user = authenticate_user_flexible(request, credential, password)
         if user:
             profile = get_user_profile(user)
             if profile and profile.role == "student":
@@ -64,9 +95,18 @@ def student_login(request):
                 login(request, user)
                 return redirect("student_dashboard")
             else:
-                messages.error(request, f"This account is registered as {profile.role.title()}. Please login via the {profile.role.title()} portal.")
+                messages.error(request, f"Account '{user.username}' is registered as {profile.role.capitalize()}. Please sign in via the {profile.role.capitalize()} portal.")
         else:
-            messages.error(request, "Invalid username or password.")
+            # Check why authentication failed to provide precise guidance
+            matched = User.objects.filter(Q(username__iexact=credential) | Q(profile__member_id__iexact=credential) | Q(email__iexact=credential)).first()
+            if matched:
+                prof = get_user_profile(matched)
+                if prof and prof.role != "student":
+                    messages.error(request, f"Account '{matched.username}' is registered as {prof.role.capitalize()}. Please sign in via the {prof.role.capitalize()} portal.")
+                else:
+                    messages.error(request, "Incorrect password. Please try again or click 'Forgot Password?'.")
+            else:
+                messages.error(request, f"No student account found for '{credential}'. Please check your spelling or register a student account.")
     return render(request, "auth/student_login.html")
 
 
@@ -104,12 +144,15 @@ def student_register(request):
 
 
 def faculty_login(request):
-    if request.user.is_authenticated:
-        return redirect("faculty_dashboard")
+    if request.user.is_authenticated and request.method == "GET":
+        profile = get_user_profile(request.user)
+        if profile and profile.role == "faculty":
+            return redirect("faculty_dashboard")
+
     if request.method == "POST":
-        username = request.POST.get("username", "").strip()
+        credential = request.POST.get("username", "").strip()
         password = request.POST.get("password", "")
-        user = authenticate(request, username=username, password=password)
+        user = authenticate_user_flexible(request, credential, password)
         if user:
             profile = get_user_profile(user)
             if profile and profile.role == "faculty":
@@ -117,10 +160,18 @@ def faculty_login(request):
                 messages.success(request, f"Welcome back, Professor {user.username}!")
                 return redirect("faculty_dashboard")
             else:
-                role_name = profile.role.title() if profile else "Student"
-                messages.error(request, f"This account is registered as {role_name}. Please login via the {role_name} portal.")
+                role_name = profile.role.capitalize() if profile else "Student"
+                messages.error(request, f"Account '{user.username}' is registered as {role_name}. Please sign in via the {role_name} portal.")
         else:
-            messages.error(request, "Invalid faculty credentials.")
+            matched = User.objects.filter(Q(username__iexact=credential) | Q(profile__member_id__iexact=credential) | Q(email__iexact=credential)).first()
+            if matched:
+                prof = get_user_profile(matched)
+                if prof and prof.role != "faculty":
+                    messages.error(request, f"Account '{matched.username}' is registered as {prof.role.capitalize()}. Please sign in via the {prof.role.capitalize()} portal.")
+                else:
+                    messages.error(request, "Incorrect password. Please try again or click 'Forgot Password?'.")
+            else:
+                messages.error(request, f"No faculty account found for '{credential}'. Please check your spelling or register a faculty profile.")
     return render(request, "auth/faculty_login.html")
 
 
@@ -158,14 +209,15 @@ def faculty_register(request):
 
 
 def librarian_login(request):
-    if request.user.is_authenticated:
+    if request.user.is_authenticated and request.method == "GET":
         profile = get_user_profile(request.user)
         if profile and profile.role == "librarian":
             return redirect("librarian_dashboard")
+
     if request.method == "POST":
-        username = request.POST.get("username", "").strip()
+        credential = request.POST.get("username", "").strip()
         password = request.POST.get("password", "")
-        user = authenticate(request, username=username, password=password)
+        user = authenticate_user_flexible(request, credential, password)
         if user:
             profile = get_user_profile(user)
             if profile and profile.role == "librarian":
@@ -173,9 +225,17 @@ def librarian_login(request):
                 messages.success(request, f"Librarian Control Center active for {user.username}.")
                 return redirect("librarian_dashboard")
             else:
-                messages.error(request, "Unauthorized. This account does not have Librarian credentials.")
+                messages.error(request, f"Unauthorized: '{user.username}' does not have Librarian credentials.")
         else:
-            messages.error(request, "Invalid librarian username or password.")
+            matched = User.objects.filter(Q(username__iexact=credential) | Q(profile__member_id__iexact=credential) | Q(email__iexact=credential)).first()
+            if matched:
+                prof = get_user_profile(matched)
+                if prof and prof.role != "librarian":
+                    messages.error(request, f"Account '{matched.username}' is registered as {prof.role.capitalize()}. Please sign in via the {prof.role.capitalize()} portal.")
+                else:
+                    messages.error(request, "Incorrect password. Please try again or click 'Forgot Password?'.")
+            else:
+                messages.error(request, f"No staff account found for '{credential}'. Please check your staff username.")
     return render(request, "auth/librarian_login.html")
 
 
