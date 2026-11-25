@@ -111,8 +111,6 @@ def student_login(request):
 
 
 def student_register(request):
-    if request.user.is_authenticated:
-        return redirect("student_dashboard")
     if request.method == "POST":
         username = request.POST.get("username", "").strip()
         password = request.POST.get("password", "")
@@ -124,9 +122,12 @@ def student_register(request):
             messages.error(request, "Username and password are required.")
             return render(request, "auth/student_register.html")
 
-        if User.objects.filter(username=username).exists():
-            messages.error(request, "A user with that username already exists.")
+        if User.objects.filter(username__iexact=username).exists():
+            messages.error(request, f"The username '{username}' is already taken. Please choose another one.")
             return render(request, "auth/student_register.html")
+
+        if request.user.is_authenticated:
+            logout(request)
 
         user = User.objects.create_user(username=username, password=password)
         Profile.objects.create(
@@ -176,8 +177,6 @@ def faculty_login(request):
 
 
 def faculty_register(request):
-    if request.user.is_authenticated:
-        return redirect("faculty_dashboard")
     if request.method == "POST":
         username = request.POST.get("username", "").strip()
         password = request.POST.get("password", "")
@@ -189,9 +188,12 @@ def faculty_register(request):
             messages.error(request, "Username and password are required.")
             return render(request, "auth/faculty_register.html")
 
-        if User.objects.filter(username=username).exists():
-            messages.error(request, "Username already in use.")
+        if User.objects.filter(username__iexact=username).exists():
+            messages.error(request, f"The username '{username}' is already taken. Please choose another one.")
             return render(request, "auth/faculty_register.html")
+
+        if request.user.is_authenticated:
+            logout(request)
 
         user = User.objects.create_user(username=username, password=password)
         Profile.objects.create(
@@ -240,8 +242,6 @@ def librarian_login(request):
 
 
 def librarian_register(request):
-    if request.user.is_authenticated:
-        return redirect("librarian_dashboard")
     if request.method == "POST":
         username = request.POST.get("username", "").strip()
         password = request.POST.get("password", "")
@@ -257,9 +257,12 @@ def librarian_register(request):
             messages.error(request, "Username and password are required.")
             return render(request, "auth/librarian_register.html", {"secret_hint": LIBRARIAN_SECRET_CODE})
 
-        if User.objects.filter(username=username).exists():
-            messages.error(request, "Username already taken.")
+        if User.objects.filter(username__iexact=username).exists():
+            messages.error(request, f"The username '{username}' is already taken. Please choose another one.")
             return render(request, "auth/librarian_register.html", {"secret_hint": LIBRARIAN_SECRET_CODE})
+
+        if request.user.is_authenticated:
+            logout(request)
 
         user = User.objects.create_user(username=username, password=password, is_staff=True)
         Profile.objects.create(
