@@ -48,7 +48,7 @@ python -m venv venv
 
 | Role | Username | Password | Dedicated Login URL |
 | :--- | :--- | :--- | :--- |
-| **Student** | `student_keerthi` | `student@123` | `http://127.0.0.1:8000/auth/student/login/` |
+| **Student** | `SriKeerthi` *(or Roll No `324103210012`)* | `student@123` | `http://127.0.0.1:8000/auth/student/login/` |
 | **Faculty** | `prof_sharma` | `faculty@123` | `http://127.0.0.1:8000/auth/faculty/login/` |
 | **Librarian** | `librarian_admin` | `admin@123` | `http://127.0.0.1:8000/auth/librarian/login/` |
 
